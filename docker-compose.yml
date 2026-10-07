@@ -5,7 +5,7 @@ services:
       # Tells Traefik to route traffic to this specific container
       - "traefik.enable=true"
       # Defines the exact URL you want to use for this app
-      - "traefik.http.routers.testapp.rule=Host(`app.yourdomain.com`)"
+      - "traefik.http.routers.testapp.rule=Host(`whoami.hatamoto.uk`)"
     networks:
       - komodo_default
 

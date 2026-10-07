@@ -29,16 +29,18 @@ services:
 
   frontend:
     labels:
+      - "traefik.enable=true"
       - "traefik.http.routers.test.rule=Host(`webapp.hatamoto.uk`)"
     build:
       context: ./Frontend
     depends_on:
       - backend
     networks:
-      - komodo_default
+      - komodo_default # Traefik bridge
 
 volumes:
   postgres_data:
+
 networks:
- komodo_default:
-  external: true
+  komodo_default:
+    external: true

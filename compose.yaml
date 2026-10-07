@@ -28,6 +28,8 @@ services:
       - "8080:8080"
 
   frontend:
+    labels:
+      - "traefik.http.routers.test.rule=Host(`webapp.hatamoto.uk`)"
     build:
       context: ./Frontend
     depends_on:

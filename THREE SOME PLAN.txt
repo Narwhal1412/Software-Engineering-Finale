@@ -1,0 +1,65 @@
+THREE SOME PLAN 
+Người 1 — + Backend + Project Management
+Phụ trách chính:
+- Phân tích yêu cầu
+- Functional / Non-functional Requirements
+- Node.js / Express backend
+- API / routing / business logic
+- Git/SVN quản lý repository
+- Project Management Plan
+Report phụ trách:
+- Chapter 1 — Introduction
+- Chapter 2 — Project Management Plan
+- Một phần Chapter 3 — Requirements
+Công việc cụ thể:
+- Xác định chức năng hệ thống
+- Phân chia task cho nhóm
+- Theo dõi tiến độ
+- Quản lý Git
+- Viết Risk Analysis
+- Viết Schedule
+- Tổng hợp report
+ Người 2 — Frontend + UI/UX
+Phụ trách chính:
+- HTML/CSS
+- Bootstrap
+- JavaScript
+- Handlebars
+- Giao diện Customer
+- Giao diện Admin
+- Responsive
+Report phụ trách:
+- Chapter 4 — Architecture
+- Phần giao diện trong Chapter 7 — Demo
+Diagram phụ trách:
+- Use Case Diagram
+- Activity Diagram
+Công việc cụ thể:
+- Thiết kế giao diện
+- Implement các trang
+- Kết nối frontend với backend
+- Chụp screenshot giao diện
+- Làm Activity Diagram
+Người 3 — Database + Testing + System Design
+Phụ trách chính:
+- Database
+- SQL
+- ERD
+- Database relationship
+- Testing
+- Test cases
+- Unit test / system test
+Report phụ trách:
+- Chapter 5 — Design
+- Chapter 6 — Test Plan
+Diagram phụ trách:
+- ERD
+- Class Diagram
+- Sequence Diagram
+Công việc cụ thể:
+- Thiết kế database
+- Tạo bảng
+- Quan hệ giữa các bảng
+- Viết test case
+- Chạy test
+- Tổng hợp kết quả test

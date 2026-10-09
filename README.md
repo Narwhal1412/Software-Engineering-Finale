@@ -7,7 +7,7 @@
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Repository Structure](#repository-structure)
-- [Prerequisites](#Prerequisite)
+- [Prerequisites](#Prerequisites)
 - [Quick Start](#quick-start)
 - [Environment Variable](#environment-variables)
 - [Documentation](#documentation)
@@ -96,7 +96,7 @@ Stop everything with `docker compose down`.
 
 ## Environment Variables
 
-Copy `.env.example`to `.env` and fill in the values.
+Copy `.env.example` to `.env` and fill in the values.
 
 ```
 cp .env.example .env

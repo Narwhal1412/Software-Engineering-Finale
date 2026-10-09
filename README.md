@@ -7,6 +7,7 @@
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Repository Structure](#repository-structure)
+- [Prerequisite](#Prerequisite)
 - [Quick Start](#quick-start)
 
 ## Overview
@@ -71,6 +72,11 @@ flowchart LR
 ├── .gitignore 		  # Files ignored(.env) when pushed to git 
 └── README.md
 ```
+
+## Prerequisites
+
+- [Git](https://git-scm.com)
+- [Docker](https://docs.docker.com/get-started/get-docker/)
 
 ## Quick Start
 ```bash

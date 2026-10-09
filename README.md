@@ -5,6 +5,7 @@
 ## Table Of Contents
 
 - [Overview](#overview)
+- [Architecture](#architecture)
 - [Quick Start](#quick-start)
 
 ## Overview
@@ -18,7 +19,7 @@ This repository is dedicated towards using Open Source Softwares to create the p
 
 ## Architecture
 
-The system has three **tiers**(what runs where, each has its own container). The backend is further organized into **layers**
+The system has three **tiers**(what runs where, each has its own container). The backend is further organized into **layers**.
 
 ```mermaid
 flowchart LR

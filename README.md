@@ -9,7 +9,7 @@
 - [Repository Structure](#repository-structure)
 - [Prerequisites](#Prerequisite)
 - [Quick Start](#quick-start)
-- [Environment Variable](#environment-variable)
+- [Environment Variable](#environment-variables)
 - [Documentation](#documentation)
 
 ## Overview

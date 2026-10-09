@@ -9,6 +9,8 @@
 - [Repository Structure](#repository-structure)
 - [Prerequisites](#Prerequisite)
 - [Quick Start](#quick-start)
+- [Environment Variable](#environment-variable)
+- [Documentation](#documentation)
 
 ## Overview
 
@@ -85,3 +87,26 @@ cd Software-Engineering-Finale
 cp .env.example .env # then edit with your own values
 docker compose up --build
 ```
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:<port> |
+| Backend API | http://localhost:<port> |
+
+Stop everything with `docker compose down`.
+
+## Environment Variables
+
+Copy `.env.example`to `.env` and fill in the values.
+
+```
+cp .env.example .env
+```
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DB_USER` | Database username | `app` |
+| `DB_PASSWORD` | Database password | `change-me` |
+| `DB_NAME` | Database name | `appdb` |
+| `APP_PORT` | Port the backend listens on | `8080` |
+ 
+## Documentation
+

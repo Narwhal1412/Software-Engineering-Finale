@@ -50,6 +50,12 @@ flowchart LR
     style T3 fill:#fffbeb,stroke:#d97706,color:#78350f
 ```
 
+| Tier | Layer(s) | Technology | Details |
+|------|----------|------------|---------|
+| Presentation | Presentation | ... | [Frontend/README.md](Frontend/README.md) |
+| Application | Business Logic, Data Access | ... | [Backend/README.md](Backend/README.md) |
+| Data | none (data store) | PostgreSQL | defined in `compose.yaml` |
+
 ## Quick Start
 ```bash
 git clone https://github.com/Narwhal1412/Software-Engineering-Finale.git

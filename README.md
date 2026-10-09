@@ -32,10 +32,22 @@ flowchart LR
         end
     end
     subgraph T3["Data tier"]
-        D[("Database")]
+        D[("PostgreSQL")]
     end
     F -->|HTTP / JSON| C
     R -->|SQL| D
+ 
+    classDef pres fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef logic fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef data fill:#fef3c7,stroke:#d97706,color:#78350f
+    class F pres
+    class C,S,R logic
+    class D data
+ 
+    style T1 fill:#eff6ff,stroke:#2563eb,color:#1e3a8a
+    style T2 fill:#f0fdf4,stroke:#16a34a,color:#14532d
+    style B fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style T3 fill:#fffbeb,stroke:#d97706,color:#78350f
 ```
 
 ## Quick Start

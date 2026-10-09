@@ -6,6 +6,7 @@
 
 - [Overview](#overview)
 - [Architecture](#architecture)
+- [Repository Structure](#repository-structure)
 - [Quick Start](#quick-start)
 
 ## Overview
@@ -55,6 +56,21 @@ flowchart LR
 | Presentation | Presentation | ... | [Frontend/README.md](Frontend/README.md) |
 | Application | Business Logic, Data Access | ... | [Backend/README.md](Backend/README.md) |
 | Data | none (data store) | PostgreSQL | defined in `compose.yaml` |
+
+## Repository Structure
+
+```
+.
+├── Backend/          	  # API service
+├── Frontend/         	  # Web UI
+├── docs/             	  # Plans, notes, design decisions
+├── .env.example      	  # Template for required environment variables
+├── compose.yaml      	  # Defines how the services run together
+├── compose.override.yaml # Override ports mapping for local deployment
+├── compose.prod.yaml 	  # Override for adding labels for CI/CD
+├── .gitignore 		  # Files ignored(.env) when pushed to git 
+└── README.md
+```
 
 ## Quick Start
 ```bash

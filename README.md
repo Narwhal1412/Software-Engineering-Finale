@@ -7,7 +7,7 @@
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Repository Structure](#repository-structure)
-- [Prerequisite](#Prerequisite)
+- [Prerequisites](#Prerequisite)
 - [Quick Start](#quick-start)
 
 ## Overview

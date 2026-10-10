@@ -21,7 +21,6 @@ steps:
     context: Backend
 
     # Taken from woodpecker secrets
-    username:
-     from_secret: ${CI_REPO_OWNER}
+    username: ${CI_REPO_OWNER}
     password:
      from_secret: ghcr_token

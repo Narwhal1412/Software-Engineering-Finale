@@ -18,6 +18,7 @@ steps:
     tags: [latest, "${CI_COMMIT_SHA:0:8}"] # The image gets latest plus the first 8 characters of the commit SHA
     dockerfile: Backend/Dockerfile
     context: Backend
+    # Taken from woodpecker secrets
     username:
      from_secret: ghcr_username
     password:

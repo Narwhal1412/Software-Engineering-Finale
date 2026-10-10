@@ -34,7 +34,7 @@ steps:
     KOMODO_WEBHOOK_URL:
      from_secret: komodo_webhook_url
     KOMODO_WEBHOOK_SECRET:
-     from_secret: komodo_wehook_secret
+     from_secret: komodo_webhook_secret
    commands:
     - apk add --no-cache curl openssl
     - | 

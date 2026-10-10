@@ -1,3 +1,3 @@
 # Placeholder for testing
-FROM traefik/whoami
+FROM nginx:alpine
 

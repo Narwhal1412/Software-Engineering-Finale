@@ -3,7 +3,7 @@ when:
  - event: push
    branch: main
    path:
-    include: ['Backend/**, '.woodpecker/backend.yaml']
+    include: ['Backend/**', '.woodpecker/backend.yaml']
 steps:
  - name: publish
    # Buildx image: https://woodpecker-ci.org/plugins/docker-buildx

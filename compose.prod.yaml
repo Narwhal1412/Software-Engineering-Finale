@@ -1,0 +1,15 @@
+# This file is the override when ran on a production server
+
+services:
+ whoami:
+  labels:
+   - "traefik.enable=true"
+   - "traefik.http.routers.test.rule=Host('test.hatamoto.uk')"
+   - "traefik.http.routers.test.tls.certresolver=myresolver"
+   - "traefik.http.routers.test.entrypoint=websecure"
+ network:
+  - komodo_default
+
+networks:
+ komodo_default:
+  external: true

@@ -4,9 +4,9 @@ services:
  whoami:
   labels:
    - "traefik.enable=true"
-   - "traefik.http.routers.test.rule=Host('test.hatamoto.uk')"
+   - "traefik.http.routers.test.rule=Host(`test.hatamoto.uk`)"
    - "traefik.http.routers.test.tls.certresolver=myresolver"
-   - "traefik.http.routers.test.entrypoint=websecure"
+   - "traefik.http.routers.test.entrypoints=websecure"
   networks:
    - komodo_default
 

@@ -7,7 +7,7 @@ services:
    - "traefik.http.routers.test.rule=Host('test.hatamoto.uk')"
    - "traefik.http.routers.test.tls.certresolver=myresolver"
    - "traefik.http.routers.test.entrypoint=websecure"
- network:
+ networks:
   - komodo_default
 
 networks:

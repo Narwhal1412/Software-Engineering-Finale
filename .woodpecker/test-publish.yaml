@@ -4,6 +4,7 @@ when:
    branch: main
    path:
     include: ['Backend/**', '.woodpecker/backend.yaml']
+
 steps:
  - name: publish
    # Buildx image: https://woodpecker-ci.org/plugins/docker-buildx
@@ -25,3 +26,21 @@ steps:
     username: ${CI_REPO_OWNER}
     password:
      from_secret: ghcr_token
+   
+   # Test deployment
+ - name: deploy
+   image: alpine:3
+   environment:
+    KOMODO_WEBHOOK_URL:
+     from_secret: komodo_webhook_url
+    KOMODO_WEBHOOK_SECRET:
+     from_secret: komodo_wehook_secret
+   commands:
+    - apk add --no-cache curl openssl
+    - | 
+      PAYLOAD='{"ref":"refs/heads/main"}'
+      SIG=$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "$KOMODO_WEBHOOK_SECRET" -r | cut -d' ' -f1)
+      curl -fsS -X POST "KOMODO_WEBHOOK_URL" \
+       -H "Content-Type: application/json"
+       -H "X-Hub-Signature-256: sha256=$SIG"
+       -d "$PAYLOAD"

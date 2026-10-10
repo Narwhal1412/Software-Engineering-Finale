@@ -5,8 +5,11 @@ when:
 
 steps:
  - name: publish
-   image: woodpeckerci/plugin-docker-buildx
+   image: woodpeckerci/plugin-docker-buildx:6.1.2
    settings:
+    # Request elevated privilege from the system,
+    # Requires an environment variable to take effect.
+    privileged: true
     # Multiarch Image
     platforms: windows/amd64,darwin/amd64,darwin/arm64,freebsd/amd64,linux/amd64,linux/arm64/v8
     registry: ghcr.io

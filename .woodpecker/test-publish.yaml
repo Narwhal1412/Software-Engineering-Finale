@@ -41,6 +41,6 @@ steps:
       PAYLOAD='{"ref":"refs/heads/main"}'
       SIG=$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "$KOMODO_WEBHOOK_SECRET" -r | cut -d' ' -f1)
       curl -fsS -X POST "$KOMODO_WEBHOOK_URL" \
-       -H "Content-Type: application/json"
-       -H "X-Hub-Signature-256: sha256=$SIG"
+       -H "Content-Type: application/json" \
+       -H "X-Hub-Signature-256: sha256=$SIG" \
        -d "$PAYLOAD"

@@ -1,0 +1,7 @@
+# This is a test file that override upon using 'docker compose'
+# Contains all the ports required to work on localhost
+
+services:
+ whoami:
+  ports:
+   - "80:80"

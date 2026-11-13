@@ -66,6 +66,7 @@ flowchart LR
 .
 ├── Backend/          	  # API service
 ├── Frontend/         	  # Web UI
+├── Database/             # Database sqls
 ├── .woodpecker 	  # CI/CD Pipeline instructions yaml files
 ├── docs/             	  # Plans, notes, design decisions
 ├── .env.example      	  # Template for required environment variables

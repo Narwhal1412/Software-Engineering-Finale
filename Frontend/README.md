@@ -1,122 +1,124 @@
-TECHBOX PC - FRONTEND (React + Vite)   |
-====================================================================================
+# TECHBOX PC - FRONTEND (React + Vite)
 
-1. CẤU TRÚC
-   src/main.jsx        điểm vào của ứng dụng
-   src/App.jsx         chọn trang theo #hash (cửa hàng hoặc quản trị), giữ trạng thái đăng nhập,
-                       tự đăng xuất khi phiên hết hạn (HTTP 401)
-   src/Shop.jsx        trang cửa hàng: sản phẩm, tìm kiếm, giỏ hàng, đặt hàng, tài khoản, đơn hàng
-   src/Admin.jsx       trang quản trị: thống kê, sản phẩm, danh mục, đơn hàng, thành viên
-   src/ui.jsx          thành phần dùng chung (hộp thoại, thông báo, ô nhập, khung đơn hàng)
-   src/api.js          LỚP GỌI API DUY NHẤT + dữ liệu giả (mock). Đầu file là hợp đồng API cho backend
-   src/styles.css      toàn bộ CSS
-   src/*.test.js(x)    unit test (Vitest + React Testing Library); src/test/setup.js là cấu hình chung
-   docs/API.md         hợp đồng API (đưa cho người làm routes + BLL)
-   eslint.config.js, .prettierrc, .editorconfig    quy ước code (coding convention)
+---
 
-2. CHẠY THỬ (dữ liệu giả, không cần backend)
-   Cần Node.js 18 trở lên.
-       npm install
-       npm run dev
-   Mở địa chỉ Vite in ra (thường http://localhost:5173).
-   - Cửa hàng:   /
-   - Quản trị:   /#/admin   (hoặc bấm "Trang quản trị" khi đăng nhập admin)
-   - Tài khoản admin demo: admin@pc.vn / 123456
-   - Tài khoản thường: tự đăng ký (không cần kích hoạt; mất sau khi xóa dữ liệu trình duyệt)
-   - Sản phẩm, giỏ, đơn giả reset khi tải lại trang; có sẵn 7 đơn mẫu để xem biểu đồ thống kê
+## 1. PROJECT STRUCTURE
 
-3. KIỂM TRA CODE
-       npm test            chạy toàn bộ unit test
-       npm run coverage    chạy test kèm báo cáo độ phủ (thư mục coverage/)
-       npm run lint        kiểm tra ESLint
-       npm run format      định dạng lại code bằng Prettier (chạy một lần rồi commit)
-   Lưu ý: unit test dùng dữ liệu giả trong src/api.js. Nếu xóa phần mock khi nối backend thật,
-   hãy giữ lại các test về giao diện (ui, Admin, App) và chuyển test api sang mock fetch.
+- `src/main.jsx`: Application entry point.
+- `src/App.jsx`: Handles page routing using `#hash` (store or admin panel), maintains login state, and automatically logs users out when the session expires (HTTP 401).
+- `src/Shop.jsx`: Store page, including products, search, shopping cart, checkout, user accounts, and order history.
+- `src/Admin.jsx`: Admin dashboard, including statistics, products, categories, orders, and members.
+- `src/ui.jsx`: Shared UI components (dialogs, notifications, input fields, and order cards).
+- `src/api.js`: THE ONLY API CALLING LAYER + mock data. The API contract for the backend is documented at the beginning of this file.
+- `src/styles.css`: All CSS styles.
+- `src/*.test.js(x)`: Unit tests (Vitest + React Testing Library); `src/test/setup.js` contains shared test configuration.
+- `docs/API.md`: API contract (provided to the developers responsible for Routes + BLL).
+- `eslint.config.js`, `.prettierrc`, `.editorconfig`: Coding conventions and code style configuration.
 
-4. NỐI BACKEND THẬT
-   a) Backend làm đúng các endpoint trong docs/API.md.
-   b) Chạy dev:  API_TARGET=http://localhost:3000 VITE_USE_MOCK=false npm run dev
-      (Windows PowerShell: $env:API_TARGET="http://localhost:3000"; $env:VITE_USE_MOCK="false"; npm run dev)
-   c) Frontend chỉ gọi đường dẫn tương đối /api và /uploads, không gắn cứng host hoặc port.
-   d) Lỗi từ backend: trả HTTP 4xx kèm JSON {"message": "..."} thì frontend tự hiện thông báo.
-   e) Token hết hạn hoặc sai: backend trả HTTP 401, frontend tự xóa phiên và yêu cầu đăng nhập lại.
+## 2. RUNNING THE APPLICATION (MOCK DATA, NO BACKEND REQUIRED)
 
-5. BUILD VÀ DOCKER (frontend là một container riêng trong mô hình 3 tier)
-       npm run build            -> thư mục dist
-       docker build -t techbox-web .
-   Dockerfile build 2 giai đoạn: node build ra dist, rồi nginx phục vụ dist.
-   nginx.conf chuyển /api và /uploads sang service tên "backend" cổng 3000; đổi cho khớp docker-compose.yml.
-   Dockerfile dùng "npm ci" nên BẮT BUỘC có package-lock.json trong repo (tạo bằng npm install rồi commit).
-   Gợi ý các bước pipeline CI cho frontend:  npm ci -> npm run lint -> npm test -> npm run build -> docker build.
+Requires Node.js 18 or later.
 
-6. QUY TẮC KIẾN TRÚC (3 layers / 3 tier)
-   - Frontend là Presentation layer, chạy ở Client tier (trình duyệt).
-   - Chỉ gọi API qua src/api.js. Không gọi database, không đặt quy tắc nghiệp vụ trong component.
-   - Kiểm tra dữ liệu ở frontend chỉ để báo lỗi sớm; backend vẫn phải kiểm tra lại và tự kiểm tra quyền admin.
+```bash
+npm install
+npm run dev
+```
 
-7. GIT
-   Commit nhỏ và thường xuyên (rubric chấm Git suốt dự án). .gitignore đã loại node_modules, dist, coverage.
-   Nên commit cả package-lock.json (sau lần npm install đầu tiên).
+Open the Vite URL displayed in the terminal (usually `http://localhost:5173`).
 
-TECHBOX PC - FRONTEND (React + Vite)   |   Phần của: người phụ trách frontend
-====================================================================================
+- Store: `/`
+- Admin panel: `/#/admin` (or click "Admin Dashboard" after logging in as an admin).
+- Demo admin account: `admin@pc.vn / 123456`
+- Regular user account: Register a new account (no activation required; account data will be lost when browser data is cleared).
+- Mock products, cart, and orders are reset when the page is reloaded; 7 sample orders are provided for viewing dashboard charts.
 
-1. CẤU TRÚC
-   src/main.jsx        điểm vào của ứng dụng
-   src/App.jsx         chọn trang theo #hash (cửa hàng hoặc quản trị), giữ trạng thái đăng nhập,
-                       tự đăng xuất khi phiên hết hạn (HTTP 401)
-   src/Shop.jsx        trang cửa hàng: sản phẩm, tìm kiếm, giỏ hàng, đặt hàng, tài khoản, đơn hàng
-   src/Admin.jsx       trang quản trị: thống kê, sản phẩm, danh mục, đơn hàng, thành viên
-   src/ui.jsx          thành phần dùng chung (hộp thoại, thông báo, ô nhập, khung đơn hàng)
-   src/api.js          LỚP GỌI API DUY NHẤT + dữ liệu giả (mock). Đầu file là hợp đồng API cho backend
-   src/styles.css      toàn bộ CSS
-   src/*.test.js(x)    unit test (Vitest + React Testing Library); src/test/setup.js là cấu hình chung
-   docs/API.md         hợp đồng API (đưa cho người làm routes + BLL)
-   eslint.config.js, .prettierrc, .editorconfig    quy ước code (coding convention)
+## 3. CODE QUALITY CHECKS
 
-2. CHẠY THỬ (dữ liệu giả, không cần backend)
-   Cần Node.js 18 trở lên.
-       npm install
-       npm run dev
-   Mở địa chỉ Vite in ra (thường http://localhost:5173).
-   - Cửa hàng:   /
-   - Quản trị:   /#/admin   (hoặc bấm "Trang quản trị" khi đăng nhập admin)
-   - Tài khoản admin demo: admin@pc.vn / 123456
-   - Tài khoản thường: tự đăng ký (không cần kích hoạt; mất sau khi xóa dữ liệu trình duyệt)
-   - Sản phẩm, giỏ, đơn giả reset khi tải lại trang; có sẵn 7 đơn mẫu để xem biểu đồ thống kê
+```bash
+npm test
+```
+Runs all unit tests.
 
-3. KIỂM TRA CODE
-       npm test            chạy toàn bộ unit test
-       npm run coverage    chạy test kèm báo cáo độ phủ (thư mục coverage/)
-       npm run lint        kiểm tra ESLint
-       npm run format      định dạng lại code bằng Prettier (chạy một lần rồi commit)
-   Lưu ý: unit test dùng dữ liệu giả trong src/api.js. Nếu xóa phần mock khi nối backend thật,
-   hãy giữ lại các test về giao diện (ui, Admin, App) và chuyển test api sang mock fetch.
+```bash
+npm run coverage
+```
+Runs tests and generates a code coverage report (in the `coverage/` directory).
 
-4. NỐI BACKEND THẬT
-   a) Backend làm đúng các endpoint trong docs/API.md.
-   b) Chạy dev:  API_TARGET=http://localhost:3000 VITE_USE_MOCK=false npm run dev
-      (Windows PowerShell: $env:API_TARGET="http://localhost:3000"; $env:VITE_USE_MOCK="false"; npm run dev)
-   c) Frontend chỉ gọi đường dẫn tương đối /api và /uploads, không gắn cứng host hoặc port.
-   d) Lỗi từ backend: trả HTTP 4xx kèm JSON {"message": "..."} thì frontend tự hiện thông báo.
-   e) Token hết hạn hoặc sai: backend trả HTTP 401, frontend tự xóa phiên và yêu cầu đăng nhập lại.
+```bash
+npm run lint
+```
+Checks the code using ESLint.
 
-5. BUILD VÀ DOCKER (frontend là một container riêng trong mô hình 3 tier)
-       npm run build            -> thư mục dist
-       docker build -t techbox-web .
-   Dockerfile build 2 giai đoạn: node build ra dist, rồi nginx phục vụ dist.
-   nginx.conf chuyển /api và /uploads sang service tên "backend" cổng 3000; đổi cho khớp docker-compose.yml.
-   Dockerfile dùng "npm ci" nên BẮT BUỘC có package-lock.json trong repo (tạo bằng npm install rồi commit).
-   Gợi ý các bước pipeline CI cho frontend:  npm ci -> npm run lint -> npm test -> npm run build -> docker build.
+```bash
+npm run format
+```
+Formats the code using Prettier (run once before committing).
 
-6. QUY TẮC KIẾN TRÚC (3 layers / 3 tier)
-   - Frontend là Presentation layer, chạy ở Client tier (trình duyệt).
-   - Chỉ gọi API qua src/api.js. Không gọi database, không đặt quy tắc nghiệp vụ trong component.
-   - Kiểm tra dữ liệu ở frontend chỉ để báo lỗi sớm; backend vẫn phải kiểm tra lại và tự kiểm tra quyền admin.
+**Note:** Unit tests use mock data from `src/api.js`. If the mock implementation is removed when connecting to the real backend, keep the UI tests (`ui`, `Admin`, `App`) and convert API tests to use mocked `fetch` requests.
 
-7. GIT
-   Commit nhỏ và thường xuyên (rubric chấm Git suốt dự án). .gitignore đã loại node_modules, dist, coverage.
-   Nên commit cả package-lock.json (sau lần npm install đầu tiên).
+## 4. CONNECTING TO THE REAL BACKEND
 
-8. TRƯỚC KHI NỘP
-   Xóa thư mục node_modules, dist và coverage.
+**a)** The backend must implement the endpoints specified in `docs/API.md`.
+
+**b)** Run the development server:
+
+```bash
+API_TARGET=http://localhost:3000 VITE_USE_MOCK=false npm run dev
+```
+
+For Windows PowerShell:
+
+```powershell
+$env:API_TARGET="http://localhost:3000"; $env:VITE_USE_MOCK="false"; npm run dev
+```
+
+**c)** The frontend only calls relative paths `/api` and `/uploads`. Do not hardcode the host or port.
+
+**d)** Backend errors: When the backend returns an HTTP 4xx response with JSON `{"message": "..."}`, the frontend automatically displays the error message.
+
+**e)** Expired or invalid tokens: When the backend returns HTTP 401, the frontend automatically clears the session and prompts the user to log in again.
+
+## 5. BUILD AND DOCKER (FRONTEND IS A SEPARATE CONTAINER IN THE 3-TIER ARCHITECTURE)
+
+```bash
+npm run build
+```
+Generates the `dist` directory.
+
+```bash
+docker build -t techbox-web .
+```
+
+- The Dockerfile uses a two-stage build: Node.js builds the application into `dist`, then Nginx serves the generated files.
+- `nginx.conf` forwards `/api` and `/uploads` requests to the service named `backend` on port `3000`. Adjust this to match `docker-compose.yml`.
+- The Dockerfile uses `npm ci`, so `package-lock.json` MUST be included in the repository (generate it by running `npm install`, then commit it).
+
+**Suggested frontend CI pipeline:**
+
+```bash
+npm ci
+npm run lint
+npm test
+npm run build
+docker build -t techbox-web .
+```
+
+## 6. ARCHITECTURE RULES (3 LAYERS / 3-TIER ARCHITECTURE)
+
+- The frontend is the Presentation Layer, running in the Client Tier (browser).
+- All API calls must go through `src/api.js`. Do not access the database directly or put business logic inside components.
+- Frontend validation is only intended to provide early error feedback. The backend must validate the data again and independently enforce admin permissions.
+
+## 7. GIT
+
+- Commit small changes frequently (Git activity is continuously evaluated throughout the project).
+- `.gitignore` already excludes `node_modules`, `dist`, and `coverage`.
+- It is recommended to commit `package-lock.json` after the first `npm install`.
+
+## 8. BEFORE SUBMISSION
+
+Delete the following directories:
+
+- `node_modules`
+- `dist`
+- `coverage`

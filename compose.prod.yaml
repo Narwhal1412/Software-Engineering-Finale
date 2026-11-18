@@ -1,15 +1,25 @@
 # This file is the override when ran on a production server
 
 services:
- whoami:
+   # Exposed via traefik
+ frontend:
   labels:
    - "traefik.enable=true"
-   - "traefik.http.routers.test.rule=Host(`test.hatamoto.uk`)"
-   - "traefik.http.routers.test.tls.certresolver=myresolver"
-   - "traefik.http.routers.test.entrypoints=websecure"
+   - "traefik.http.routers.se-dev.rule=Host(`se-dev.hatamoto.uk`)"
+   - "traefik.http.routers.se-dev.entrypoints=websecure"
+   - "traefik.http.routers.tls.enable=true"
+  networks:
+   - komodo_default
+   # Hidden, communicate via docker network   
+ backend:
   networks:
    - komodo_default
 
+   # Hidden, communicate via docker network   
+ db: 
+  networks:
+   - komodo_default
+   
 networks:
  komodo_default:
   external: true

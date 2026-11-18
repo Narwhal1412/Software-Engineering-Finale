@@ -7,7 +7,7 @@ services:
    - "traefik.enable=true"
    - "traefik.http.routers.se-dev.rule=Host(`se-dev.hatamoto.uk`)"
    - "traefik.http.routers.se-dev.entrypoints=websecure"
-   - "traefik.http.routers.tls.enable=true"
+   - "traefik.http.routers.tls=true"
   networks:
    - komodo_default
    # Hidden, communicate via docker network   
@@ -19,7 +19,7 @@ services:
  db: 
   networks:
    - komodo_default
-   
+
 networks:
  komodo_default:
   external: true

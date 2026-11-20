@@ -3,10 +3,14 @@
 use std::sync::Arc;
 
 use crate::config::Config;
+use crate::db;
 use crate::repositories::mock::{
     InMemoryCartRepository, InMemoryCategoryRepository, InMemoryOrderRepository,
-    InMemoryProductRepository, InMemoryUserRepository, MockStore, SEED_ADMIN_EMAIL,
-    SEED_CUSTOMER_EMAILS, SEED_PASSWORD,
+    InMemoryProductRepository, InMemoryUserRepository, MockStore,
+};
+use crate::repositories::mysql::{
+    MySqlCartRepository, MySqlCategoryRepository, MySqlOrderRepository, MySqlProductRepository,
+    MySqlUserRepository,
 };
 use crate::repositories::{
     CartRepository, CategoryRepository, OrderRepository, ProductRepository, RepoError,
@@ -54,22 +58,24 @@ impl AppState {
     }
 }
 
-/// Dựng toàn bộ repository. ĐÂY LÀ CHỖ DUY NHẤT chọn implementation của tầng DAL.
-///
-/// Hiện trả về bản mock in-memory có dữ liệu mẫu. Để chuyển sang database thật,
-/// thay thân hàm này bằng việc tạo connection pool từ `config` và trả về các
-/// repository thật (xem docs/DATABASE_SPEC.md mục 7).
-///
-/// Dòng log tài khoản mẫu bên dưới thuộc về nhánh mock: khi thay thân hàm bằng DB
-/// thật thì nó biến mất cùng mock, không còn lộ mật khẩu demo ra log.
-pub async fn build_repositories(_config: &Config) -> Result<Repositories, RepoError> {
+/// Dựng repository MariaDB thật. ĐÂY LÀ CHỖ DUY NHẤT chọn implementation của tầng DAL
+/// khi chạy chương trình. Mở pool (có thử lại, vì DB có thể khởi động chậm hơn backend)
+/// rồi dùng chung một pool cho năm repository.
+pub async fn build_repositories(config: &Config) -> Result<Repositories, RepoError> {
+    let pool = db::connect_with_retry(config).await?;
+    Ok(Repositories {
+        users: Arc::new(MySqlUserRepository::new(pool.clone())),
+        categories: Arc::new(MySqlCategoryRepository::new(pool.clone())),
+        products: Arc::new(MySqlProductRepository::new(pool.clone())),
+        carts: Arc::new(MySqlCartRepository::new(pool.clone())),
+        orders: Arc::new(MySqlOrderRepository::new(pool)),
+    })
+}
+
+/// Dựng repository mock in-memory đã có dữ liệu mẫu. Chỉ dùng cho test tích hợp
+/// (`tests/api_tests.rs`), không cần database. Dữ liệu mất khi tiến trình kết thúc.
+pub fn build_mock_repositories() -> Result<Repositories, RepoError> {
     let store = MockStore::seeded()?;
-    tracing::info!(
-        admin = SEED_ADMIN_EMAIL,
-        customers = ?SEED_CUSTOMER_EMAILS,
-        password = SEED_PASSWORD,
-        "đang chạy với dữ liệu mock in-memory; dữ liệu mất khi tắt server"
-    );
     Ok(Repositories {
         users: Arc::new(InMemoryUserRepository::new(store.clone())),
         categories: Arc::new(InMemoryCategoryRepository::new(store.clone())),

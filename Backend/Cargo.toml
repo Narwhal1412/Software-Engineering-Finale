@@ -29,6 +29,8 @@ tracing-subscriber = { version = "=0.3.19", features = ["env-filter"] }
 dotenvy = "=0.15.7"
 argon2 = { version = "=0.5.3", features = ["std"] }
 jsonwebtoken = "=9.3.0"
+# Truy cập MariaDB (driver mysql). Không dùng macro query!: cần DB sống lúc build; dùng sqlx::query/query_as.
+sqlx = { version = "=0.8.2", default-features = false, features = ["runtime-tokio", "mysql", "chrono"] }
 
 # Argon2 cố tình chậm; bản debug không tối ưu chậm gấp hàng chục lần,
 # làm seed dữ liệu và test bị lâu. Chỉ tối ưu riêng hai crate này.

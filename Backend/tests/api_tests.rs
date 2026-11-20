@@ -4,7 +4,7 @@ use axum::body::{to_bytes, Body};
 use axum::http::{Request, StatusCode};
 use axum::Router;
 use computer_shop_backend::app::build_app;
-use computer_shop_backend::app_state::{build_repositories, AppState};
+use computer_shop_backend::app_state::{build_mock_repositories, AppState};
 use computer_shop_backend::config::Config;
 use serde_json::{json, Value};
 use tower::ServiceExt;
@@ -16,7 +16,7 @@ const SEED_PASSWORD: &str = "123456";
 /// Dựng ứng dụng với repository mock đã seed.
 async fn app() -> Router {
     let config = Config::from_env().expect("cấu hình");
-    let repos = build_repositories(&config).await.expect("repository mock");
+    let repos = build_mock_repositories().expect("repository mock");
     build_app(AppState::new(config, repos))
 }
 

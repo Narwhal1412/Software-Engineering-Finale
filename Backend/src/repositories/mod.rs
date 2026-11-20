@@ -1,12 +1,13 @@
 //! TẦNG DAL (Data Access Layer): trait repository và các implementation.
 //!
-//! Services chỉ phụ thuộc vào các trait ở đây. Hiện chỉ có implementation mock
-//! in-memory trong `mock/`; implementation database thật sẽ được thêm cạnh đó
-//! và đổi ở đúng một chỗ: `app_state::build_repositories`.
+//! Services chỉ phụ thuộc vào các trait ở đây. Có hai implementation:
+//! - `mysql/`: MariaDB thật, dùng khi chạy chương trình (`app_state::build_repositories`);
+//! - `mock/`: in-memory có dữ liệu mẫu, dùng cho test (`app_state::build_mock_repositories`).
 
 pub mod cart_repository;
 pub mod category_repository;
 pub mod mock;
+pub mod mysql;
 pub mod order_repository;
 pub mod product_repository;
 pub mod repo_error;

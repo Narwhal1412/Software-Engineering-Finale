@@ -46,7 +46,7 @@ pub struct Config {
     pub upload_dir: String,
     /// Origin được phép gọi API; rỗng nghĩa là cho phép tất cả (`CORS_ALLOWED_ORIGINS`).
     pub cors_allowed_origins: Vec<String>,
-    /// Máy chủ database (`DB_HOST`); chỉ dùng khi tích hợp DB thật.
+    /// Máy chủ database (`DB_HOST`).
     pub db_host: String,
     /// Cổng database (`DB_PORT`).
     pub db_port: u16,

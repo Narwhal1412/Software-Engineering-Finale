@@ -22,8 +22,7 @@ services:
       JWT_TTL_HOURS: ${JWT_TTL_HOURS:-24}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
       RUST_LOG: ${RUST_LOG:-info,tower_http=debug}
-      # Thông tin DB. Backend CHƯA dùng khi còn chạy mock; truyền sẵn để lúc gắn DB thật
-      # không phải sửa compose. DB_HOST = tên service "db" bên dưới (Docker tự phân giải tên).
+      # Thông tin kết nối MariaDB. DB_HOST = tên service "db" bên dưới (Docker tự phân giải tên).
       DB_HOST: db
       DB_PORT: "3306"
       DB_USER: ${DB_USER:?Hãy đặt DB_USER trong file .env}
@@ -32,11 +31,10 @@ services:
     volumes:
       # Ảnh upload nằm ngoài container để không mất khi build/chạy lại.
       - uploads:/app/uploads
-    # KHI ĐÃ GẮN DB THẬT: bỏ dấu # ở 3 dòng dưới để backend chỉ khởi động sau khi DB sẵn sàng.
-    # (Đang để tắt vì lúc này backend chạy mock; nếu init.sql lỗi thì không nên làm sập cả demo.)
-    # depends_on:
-    #   db:
-    #     condition: service_healthy
+    # Chỉ khởi động sau khi MariaDB báo healthy (đã chạy xong init.sql).
+    depends_on:
+      db:
+        condition: service_healthy
 
   db:
     image: mariadb:10.11

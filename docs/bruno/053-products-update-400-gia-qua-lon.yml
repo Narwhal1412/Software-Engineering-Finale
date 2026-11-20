@@ -1,0 +1,41 @@
+info:
+  name: "Update product giá quá lớn"
+  type: http
+  seq: 53
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Màn hình Dell 27 inch",
+        "specs": "",
+        "price": 200000000000
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 400", function () {
+          expect(res.status).to.equal(400);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Giá quá lớn");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+

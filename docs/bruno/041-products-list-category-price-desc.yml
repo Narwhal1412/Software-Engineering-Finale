@@ -1,0 +1,35 @@
+info:
+  name: "List products lọc danh mục, giá giảm dần"
+  type: http
+  seq: 41
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products"
+  params:
+    - name: categoryId
+      value: "2"
+      type: query
+    - name: sort
+      value: "priceDesc"
+      type: query
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("giá giảm dần", function () {
+          expect(res.body.map((p) => p.id)).to.deep.equal([3, 4]);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

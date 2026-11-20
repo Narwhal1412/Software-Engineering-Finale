@@ -1,0 +1,32 @@
+# Mọi sản phẩm seed đều thuộc ít nhất một đơn (A16).
+info:
+  name: "Delete product đã có trong đơn hàng"
+  type: http
+  seq: 123
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/products/7"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 409", function () {
+          expect(res.status).to.equal(409);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Sản phẩm đã có trong đơn hàng nên không thể xóa");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+

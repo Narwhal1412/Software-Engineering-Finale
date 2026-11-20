@@ -1,0 +1,39 @@
+info:
+  name: "Pin product không tồn tại"
+  type: http
+  seq: 58
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/products/999999/pin"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "pinned": true
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 404", function () {
+          expect(res.status).to.equal(404);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Không tìm thấy sản phẩm");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+

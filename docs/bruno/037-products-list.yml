@@ -1,0 +1,35 @@
+# Không cần token. Thứ tự mặc định trên seed: sản phẩm đang ghim (Ryzen 7 7800X3D) đứng đầu, sau đó mới → cũ.
+info:
+  name: "List products (công khai)"
+  type: http
+  seq: 37
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isProduct = (p) => typeof p.id === "number" && typeof p.name === "string" && typeof p.specs === "string" && typeof p.price === "number" && (p.categoryId === null || typeof p.categoryId === "number") && (p.imageUrl === null || typeof p.imageUrl === "string") && (p.pinnedAt === null || typeof p.pinnedAt === "string") && typeof p.createdAt === "string";
+
+        test("mảng product đúng cấu trúc, ghim lên đầu", function () {
+          expect(res.body).to.be.an("array").with.length.of.at.least(7);
+          res.body.forEach((p) => expect(isProduct(p)).to.equal(true));
+          expect(res.body[0].name).to.equal("Ryzen 7 7800X3D");
+          expect(res.body[0].pinnedAt).to.be.a("string");
+          expect(res.body[1].name).to.equal("PC Gaming Forge R7");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

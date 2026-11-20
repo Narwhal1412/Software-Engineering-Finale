@@ -1,13 +1,14 @@
-# This is a test file that override upon using 'docker compose'
-# Contains all the ports required to work on localhost
-
+# =============================================================================
+# compose.override.yaml: Docker Compose tự đọc file này khi chạy `docker compose up`.
+# Chỉ chứa phần dành cho máy local: mở cổng để truy cập bằng localhost.
+# =============================================================================
 services:
- db:
-  ports:
-   - "3306:3306"
- backend:
-  ports:
-   - "8000:8000"
- frontend:
-  ports:
-   - "3000:80"
+  frontend:
+    ports:
+      - "${WEB_PORT:-80}:80"          # Giao diện: http://localhost  (đổi bằng WEB_PORT trong .env)
+  backend:
+    ports:
+      - "3000:3000"                   # Gọi API trực tiếp (Bruno dùng http://localhost:3000)
+  db:
+    ports:
+      - "127.0.0.1:3306:3306"         # Chỉ máy bạn kết nối được (DBeaver, HeidiSQL, mysql client)

@@ -1,0 +1,30 @@
+info:
+  name: "List products sau khi xóa danh mục"
+  type: http
+  seq: 122
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("sản phẩm còn nguyên, categoryId = null", function () {
+          const p = res.body.find((x) => x.id === bru.getVar("productId"));
+          expect(p).to.not.equal(undefined);
+          expect(p.categoryId).to.equal(null);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

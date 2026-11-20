@@ -1,25 +1,22 @@
-# This file is the override when ran on a production server
-
+# =============================================================================
+# compose.prod.yaml: override khi chạy trên server (Traefik + Komodo).
+# Chỉ frontend nối ra mạng của Traefik; nginx của frontend đã proxy /api và /uploads
+# sang backend, còn backend và db chỉ nằm trong mạng nội bộ (không có nhãn, không mở cổng).
+# Cần đặt APP_HOST (tên miền) trong .env hoặc biến môi trường của Komodo.
+# Chạy: docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+# (không kèm compose.override.yaml nên không mở cổng nào ra ngoài).
+# =============================================================================
 services:
-   # Exposed via traefik
- frontend:
-  labels:
-   - "traefik.enable=true"
-   - "traefik.http.routers.se-dev.rule=Host(`se-dev.hatamoto.uk`)"
-   - "traefik.http.routers.se-dev.entrypoints=websecure"
-   - "traefik.http.routers.se-dev.tls=true"
-  networks:
-   - komodo_default
-   # Hidden, communicate via docker network   
- backend:
-  networks:
-   - komodo_default
-
-   # Hidden, communicate via docker network   
- db: 
-  networks:
-   - komodo_default
+  frontend:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.computer-shop.rule=Host(`${APP_HOST:?Hãy đặt APP_HOST}`)"
+      - "traefik.http.routers.computer-shop.tls.certresolver=myresolver"
+      - "traefik.http.routers.computer-shop.entrypoints=websecure"
+    networks:
+      - default          # để nói chuyện với backend
+      - komodo_default   # để Traefik thấy frontend
 
 networks:
- komodo_default:
-  external: true
+  komodo_default:
+    external: true

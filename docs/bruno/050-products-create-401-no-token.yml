@@ -1,0 +1,39 @@
+info:
+  name: "Create product không token"
+  type: http
+  seq: 50
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Hack",
+        "specs": "",
+        "price": 1000000
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 401", function () {
+          expect(res.status).to.equal(401);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Cần đăng nhập");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+

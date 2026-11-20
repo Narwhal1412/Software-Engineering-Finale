@@ -1,0 +1,45 @@
+# Frontend luôn gửi categoryId= (rỗng) khi không lọc → phải hiểu là không lọc (B8).
+info:
+  name: "List products tìm theo tên"
+  type: http
+  seq: 38
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products"
+  params:
+    - name: q
+      value: "ryzen"
+      type: query
+    - name: categoryId
+      value: ""
+      type: query
+    - name: sort
+      value: "new"
+      type: query
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isProduct = (p) => typeof p.id === "number" && typeof p.name === "string" && typeof p.specs === "string" && typeof p.price === "number" && (p.categoryId === null || typeof p.categoryId === "number") && (p.imageUrl === null || typeof p.imageUrl === "string") && (p.pinnedAt === null || typeof p.pinnedAt === "string") && typeof p.createdAt === "string";
+
+        test("mọi kết quả chứa từ khóa trong name hoặc specs", function () {
+          expect(res.body.length).to.be.at.least(1);
+          res.body.forEach((p) => {
+            expect(isProduct(p)).to.equal(true);
+            expect((p.name + " " + p.specs).toLowerCase()).to.include("ryzen");
+          });
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

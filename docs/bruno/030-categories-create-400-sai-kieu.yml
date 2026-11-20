@@ -1,0 +1,39 @@
+info:
+  name: "Create category sai kiểu"
+  type: http
+  seq: 30
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/categories"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": 123
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 400", function () {
+          expect(res.status).to.equal(400);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Dữ liệu gửi lên không hợp lệ");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+

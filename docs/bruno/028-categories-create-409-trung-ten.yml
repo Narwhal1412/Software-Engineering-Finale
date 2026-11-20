@@ -1,0 +1,40 @@
+# Trùng tên không phân biệt hoa/thường với danh mục seed "CPU" (A15).
+info:
+  name: "Create category trùng tên"
+  type: http
+  seq: 28
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/categories"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "cpu"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 409", function () {
+          expect(res.status).to.equal(409);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Tên danh mục đã tồn tại");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+

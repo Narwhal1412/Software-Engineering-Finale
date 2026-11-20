@@ -1,0 +1,36 @@
+info:
+  name: "Admin list users"
+  type: http
+  seq: 108
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/users"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isUser = (u) => typeof u.id === "number" && typeof u.email === "string" && typeof u.displayName === "string" && typeof u.phone === "string" && typeof u.address === "string" && ["user","admin"].includes(u.role) && !("passwordHash" in u) && !("password_hash" in u) && !("password" in u);
+
+        test("danh sách user, không lộ mật khẩu", function () {
+          expect(res.body).to.be.an("array").with.length.of.at.least(5);
+          res.body.forEach((u) => expect(isUser(u)).to.equal(true));
+          const emails = res.body.map((u) => u.email);
+          ["admin@pc.vn", "khach1@pc.vn", "khach2@pc.vn", "khach3@pc.vn"].forEach((e) => expect(emails).to.include(e));
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

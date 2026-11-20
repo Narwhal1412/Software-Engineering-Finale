@@ -1,0 +1,41 @@
+info:
+  name: "Create product bằng user thường"
+  type: http
+  seq: 49
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{userToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Hack",
+        "specs": "",
+        "price": 1000000
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 403", function () {
+          expect(res.status).to.equal(403);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Cần quyền quản trị");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+

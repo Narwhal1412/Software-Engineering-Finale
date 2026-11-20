@@ -1,0 +1,39 @@
+# Định dạng nhận diện theo chữ ký byte đầu tệp, không tin Content-Type (B9).
+info:
+  name: "Upload tệp không phải ảnh"
+  type: http
+  seq: 63
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/uploads"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - fixtures/not-image.txt
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 415", function () {
+          expect(res.status).to.equal(415);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Chỉ nhận ảnh JPG, PNG hoặc WebP");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "415"
+
+settings:
+  encodeUrl: true
+

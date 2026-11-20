@@ -1,0 +1,42 @@
+info:
+  name: "Place order phương thức thanh toán sai"
+  type: http
+  seq: 89
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{userToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "fullName": "Nguyễn Văn An",
+        "phone": "0900000000",
+        "address": "TP.HCM",
+        "paymentMethod": "paypal"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 400", function () {
+          expect(res.status).to.equal(400);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Chọn phương thức thanh toán");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+

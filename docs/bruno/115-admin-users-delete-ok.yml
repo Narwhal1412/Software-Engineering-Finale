@@ -1,0 +1,32 @@
+# User đăng ký ở đầu luồng, chưa có đơn → xóa được. 204 không có body.
+info:
+  name: "Admin xóa user mới đăng ký"
+  type: http
+  seq: 115
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/admin/users/{{newUserId}}"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 204", function () {
+          expect(res.status).to.equal(204);
+        });
+
+        test("không có body", function () {
+          expect(res.body === "" || res.body === undefined || res.body === null).to.equal(true);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "204"
+
+settings:
+  encodeUrl: true
+

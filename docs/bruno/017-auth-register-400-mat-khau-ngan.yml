@@ -1,0 +1,40 @@
+info:
+  name: "Register mật khẩu quá ngắn"
+  type: http
+  seq: 17
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/register"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "ngan@pc.vn",
+        "displayName": "Mật Khẩu Ngắn",
+        "password": "123",
+        "confirmPassword": "123"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 400", function () {
+          expect(res.status).to.equal(400);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Mật khẩu tối thiểu 6 ký tự");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+

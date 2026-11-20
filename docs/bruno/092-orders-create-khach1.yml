@@ -1,0 +1,51 @@
+# Giỏ seed khach1: SP2 x2 (7.290.000) + SP6 x1 (2.650.000) = 17.230.000. Lưu orderId cho luồng admin.
+info:
+  name: "Place order khach1 từ giỏ seed"
+  type: http
+  seq: 92
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{userToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "fullName": "Nguyễn Văn An",
+        "phone": "0900000000",
+        "address": "TP.HCM",
+        "paymentMethod": "bank"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 201", function () {
+          expect(res.status).to.equal(201);
+        });
+
+        const isOrder = (o) => typeof o.id === "number" && Array.isArray(o.items) && o.items.every((i) => typeof i.productId === "number" && typeof i.name === "string" && typeof i.price === "number" && typeof i.quantity === "number") && typeof o.total === "number" && ["pending","confirmed","shipped","completed","cancelled"].includes(o.status) && ["cod","bank"].includes(o.paymentMethod) && typeof o.fullName === "string" && typeof o.phone === "string" && typeof o.address === "string" && typeof o.createdAt === "string";
+
+        test("tổng = Σ giá × số lượng, 2 dòng sắp theo productId", function () {
+          expect(isOrder(res.body)).to.equal(true);
+          expect(res.body.total).to.equal(17230000);
+          expect(res.body.paymentMethod).to.equal("bank");
+          expect(res.body.items.map((i) => [i.productId, i.quantity])).to.deep.equal([[2, 2], [6, 1]]);
+        });
+    - type: after-response
+      code: |-
+        bru.setVar("orderId", res.body.id);
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+

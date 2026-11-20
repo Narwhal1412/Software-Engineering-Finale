@@ -1,0 +1,32 @@
+# khach3 đã có đơn từ bước đặt hàng ở trên → RESTRICT (A16).
+info:
+  name: "Admin xóa user đã có đơn hàng"
+  type: http
+  seq: 114
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/admin/users/{{user3Id}}"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 409", function () {
+          expect(res.status).to.equal(409);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Thành viên đã có đơn hàng nên không thể xóa");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+

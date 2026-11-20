@@ -1,0 +1,31 @@
+info:
+  name: "Stats bằng user thường"
+  type: http
+  seq: 10
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/stats"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 403", function () {
+          expect(res.status).to.equal(403);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Cần quyền quản trị");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+

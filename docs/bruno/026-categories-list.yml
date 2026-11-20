@@ -1,0 +1,35 @@
+# Không cần token (A9).
+info:
+  name: "List categories (công khai)"
+  type: http
+  seq: 26
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/categories"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("mảng {id, name}, có đủ 5 danh mục seed", function () {
+          expect(res.body).to.be.an("array").with.length.of.at.least(5);
+          res.body.forEach((c) => {
+            expect(c.id).to.be.a("number");
+            expect(c.name).to.be.a("string");
+          });
+          const names = res.body.map((c) => c.name);
+          ["CPU", "Card đồ họa", "RAM", "Ổ cứng", "PC lắp sẵn"].forEach((n) => expect(names).to.include(n));
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

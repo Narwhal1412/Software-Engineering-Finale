@@ -1,0 +1,28 @@
+info:
+  name: "Admin xóa user không token"
+  type: http
+  seq: 112
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/admin/users/{{newUserId}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 401", function () {
+          expect(res.status).to.equal(401);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Cần đăng nhập");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+

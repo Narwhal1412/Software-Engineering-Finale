@@ -1,0 +1,39 @@
+# password là số thay vì chuỗi → ApiJson trả {message} thay vì văn bản thuần.
+info:
+  name: "Login sai kiểu dữ liệu"
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/login"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{userEmail}}",
+        "password": 123456
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 400", function () {
+          expect(res.status).to.equal(400);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Dữ liệu gửi lên không hợp lệ");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+

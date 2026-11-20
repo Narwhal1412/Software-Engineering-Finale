@@ -1,0 +1,32 @@
+info:
+  name: "List orders của khach3"
+  type: http
+  seq: 95
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders"
+  headers:
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("khach3 chỉ thấy đơn của mình", function () {
+          expect(res.body).to.have.length(1);
+          expect(res.body[0].id).to.equal(bru.getVar("order3Id"));
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

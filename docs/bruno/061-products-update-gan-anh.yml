@@ -1,0 +1,43 @@
+info:
+  name: "Update product gắn ảnh vừa upload"
+  type: http
+  seq: 61
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Màn hình Dell 27 inch",
+        "specs": "2K IPS 165Hz, HDR400",
+        "price": 5990000,
+        "categoryId": {{categoryId}},
+        "imageUrl": "{{uploadedUrl}}"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("imageUrl là đường dẫn vừa upload", function () {
+          expect(res.body.imageUrl).to.equal(bru.getVar("uploadedUrl"));
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

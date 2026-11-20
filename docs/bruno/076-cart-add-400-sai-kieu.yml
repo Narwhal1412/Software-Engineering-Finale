@@ -1,0 +1,40 @@
+info:
+  name: "Add cart item sai kiểu"
+  type: http
+  seq: 76
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/cart/items"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "productId": 1,
+        "quantity": "hai"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 400", function () {
+          expect(res.status).to.equal(400);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Dữ liệu gửi lên không hợp lệ");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+

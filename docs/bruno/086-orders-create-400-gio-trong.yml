@@ -1,0 +1,43 @@
+# Giỏ đã bị xóa sau khi đặt ở bước trước.
+info:
+  name: "Place order giỏ trống"
+  type: http
+  seq: 86
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "fullName": "Lê Hoàng Cường",
+        "phone": "0987654321",
+        "address": "45 Lê Lợi, Quận 1, TP.HCM",
+        "paymentMethod": "bank"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 400", function () {
+          expect(res.status).to.equal(400);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Giỏ hàng đang trống");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+

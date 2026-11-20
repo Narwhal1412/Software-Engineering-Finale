@@ -1,0 +1,32 @@
+# Đặt hàng xóa giỏ trong cùng thao tác.
+info:
+  name: "Get cart khach1 sau khi đặt hàng"
+  type: http
+  seq: 93
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/cart"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("giỏ đã trống", function () {
+          expect(res.body).to.deep.equal([]);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

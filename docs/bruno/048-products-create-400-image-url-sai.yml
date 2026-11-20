@@ -1,0 +1,42 @@
+info:
+  name: "Create product ảnh sai đường dẫn"
+  type: http
+  seq: 48
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Màn hình ảnh lỗi",
+        "specs": "",
+        "price": 1000000,
+        "imageUrl": "ftp://sai/anh.png"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 400", function () {
+          expect(res.status).to.equal(400);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Đường dẫn ảnh không hợp lệ");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+

@@ -1,0 +1,41 @@
+# Email duy nhất, không phân biệt hoa/thường (A14).
+info:
+  name: "Register trùng email (khác hoa/thường)"
+  type: http
+  seq: 13
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/register"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "KHACH1@PC.VN",
+        "displayName": "Trùng Email",
+        "password": "123456",
+        "confirmPassword": "123456"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 409", function () {
+          expect(res.status).to.equal(409);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Email đã được đăng ký");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+

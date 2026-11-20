@@ -1,0 +1,43 @@
+info:
+  name: "Admin đổi trạng thái đơn sang confirmed"
+  type: http
+  seq: 100
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/admin/orders/{{orderId}}"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "status": "confirmed"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isOrder = (o) => typeof o.id === "number" && Array.isArray(o.items) && o.items.every((i) => typeof i.productId === "number" && typeof i.name === "string" && typeof i.price === "number" && typeof i.quantity === "number") && typeof o.total === "number" && ["pending","confirmed","shipped","completed","cancelled"].includes(o.status) && ["cod","bank"].includes(o.paymentMethod) && typeof o.fullName === "string" && typeof o.phone === "string" && typeof o.address === "string" && typeof o.createdAt === "string";
+
+        test("status đã đổi", function () {
+          expect(isOrder(res.body)).to.equal(true);
+          expect(res.body.status).to.equal("confirmed");
+          expect(res.body.id).to.equal(bru.getVar("orderId"));
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

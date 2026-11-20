@@ -1,0 +1,45 @@
+info:
+  name: "Update me"
+  type: http
+  seq: 22
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/me"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{userToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "displayName": "Nguyễn Văn An",
+        "phone": "0912345678",
+        "address": "12 Nguyễn Huệ, Quận 1, TP.HCM"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isUser = (u) => typeof u.id === "number" && typeof u.email === "string" && typeof u.displayName === "string" && typeof u.phone === "string" && typeof u.address === "string" && ["user","admin"].includes(u.role) && !("passwordHash" in u) && !("password_hash" in u) && !("password" in u);
+
+        test("giá trị đã được cập nhật", function () {
+          expect(isUser(res.body)).to.equal(true);
+          expect(res.body.phone).to.equal("0912345678");
+          expect(res.body.address).to.equal("12 Nguyễn Huệ, Quận 1, TP.HCM");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

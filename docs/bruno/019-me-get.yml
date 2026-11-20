@@ -1,0 +1,35 @@
+info:
+  name: "Get me"
+  type: http
+  seq: 19
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/me"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isUser = (u) => typeof u.id === "number" && typeof u.email === "string" && typeof u.displayName === "string" && typeof u.phone === "string" && typeof u.address === "string" && ["user","admin"].includes(u.role) && !("passwordHash" in u) && !("password_hash" in u) && !("password" in u);
+
+        test("đúng người đăng nhập", function () {
+          expect(isUser(res.body)).to.equal(true);
+          expect(res.body.email).to.equal("khach1@pc.vn");
+          expect(res.body.id).to.equal(bru.getVar("userId"));
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

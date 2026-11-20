@@ -1,0 +1,54 @@
+# Lưu productId. Sản phẩm này chưa nằm trong đơn nào nên xóa được ở cuối luồng.
+info:
+  name: "Create product"
+  type: http
+  seq: 43
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Màn hình Dell 27 inch",
+        "specs": "2K IPS 165Hz",
+        "price": 6490000,
+        "categoryId": {{categoryId}},
+        "imageUrl": null
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 201", function () {
+          expect(res.status).to.equal(201);
+        });
+
+        const isProduct = (p) => typeof p.id === "number" && typeof p.name === "string" && typeof p.specs === "string" && typeof p.price === "number" && (p.categoryId === null || typeof p.categoryId === "number") && (p.imageUrl === null || typeof p.imageUrl === "string") && (p.pinnedAt === null || typeof p.pinnedAt === "string") && typeof p.createdAt === "string";
+
+        test("product mới, chưa ghim, thuộc danh mục vừa tạo", function () {
+          expect(isProduct(res.body)).to.equal(true);
+          expect(res.body.name).to.equal("Màn hình Dell 27 inch");
+          expect(res.body.price).to.equal(6490000);
+          expect(res.body.categoryId).to.equal(bru.getVar("categoryId"));
+          expect(res.body.imageUrl).to.equal(null);
+          expect(res.body.pinnedAt).to.equal(null);
+        });
+    - type: after-response
+      code: |-
+        bru.setVar("productId", res.body.id);
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+

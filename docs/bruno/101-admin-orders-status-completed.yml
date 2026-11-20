@@ -1,0 +1,40 @@
+# Cho phép nhảy cóc (B5); completed là trạng thái cuối.
+info:
+  name: "Admin đổi trạng thái đơn sang completed"
+  type: http
+  seq: 101
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/admin/orders/{{orderId}}"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "status": "completed"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("status completed", function () {
+          expect(res.body.status).to.equal("completed");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

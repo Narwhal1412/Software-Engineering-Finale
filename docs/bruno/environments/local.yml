@@ -1,0 +1,25 @@
+name: local
+variables:
+  - name: baseUrl
+    value: http://localhost:3000
+  - name: adminEmail
+    value: admin@pc.vn
+  - name: adminPassword
+    value: "123456"
+  - name: userEmail
+    value: khach1@pc.vn
+  - name: user3Email
+    value: khach3@pc.vn
+  - name: userPassword
+    value: "123456"
+  # Các biến dưới đây do script after-response ghi vào lúc chạy (runtime variable).
+  # Khai báo rỗng ở đây chỉ để tài liệu hóa; giá trị runtime luôn được ưu tiên.
+  - name: adminToken
+    value: ""
+  - name: userToken
+    value: ""
+  - name: user3Token
+    value: ""
+  - name: newUserToken
+    value: ""
+

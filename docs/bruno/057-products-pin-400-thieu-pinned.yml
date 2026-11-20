@@ -1,0 +1,38 @@
+# Bắt buộc có pinned để tránh vô tình bỏ ghim (B8).
+info:
+  name: "Pin product thiếu field pinned"
+  type: http
+  seq: 57
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/products/{{productId}}/pin"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {}
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 400", function () {
+          expect(res.status).to.equal(400);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Dữ liệu gửi lên không hợp lệ");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+

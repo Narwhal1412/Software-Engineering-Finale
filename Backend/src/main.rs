@@ -1,51 +1,85 @@
-// 1. Imports
-// :: Is used for navigating libraries and classes
-// Just like java, import axum.routing.get, import axum.Router
-use axum::{routing::get, Router};
+//! Điểm khởi động: nạp cấu hình, dựng AppState, chạy server axum trên tokio.
 
-// Function format, that returns an integer
-fn calculate_tax(price: i32) -> i32 {
-   // In rust, the final line without ";", automatically returns.
-   price + 100
-}
+use std::error::Error;
+use std::net::SocketAddr;
 
-// 2. Endpoint function
-// In rust, an endpoint is just a normal function that returns a response
-async fn health_check() -> String {
-   let sample_total = calculate_tax(1000);
-   // JSON format
-   // "\" are used to tell the compiler to treat the next character as a normal one.
-   // format!("total: {}", variable_in_placeholder), then returns a string
-   // {{}}, tells rust to treat it as {} for JSON
-   format!("{{\"status\": \"Backend container is alive!!\", \"sample_tax_total\": {} }}", sample_total)
-}
+use computer_shop_backend::app::build_app;
+use computer_shop_backend::app_state::{build_repositories, AppState};
+use computer_shop_backend::config::Config;
+use computer_shop_backend::middleware::logging::init_tracing;
+use computer_shop_backend::middleware::password::hash_password;
+use tokio::net::TcpListener;
+use tokio::signal;
 
-// get version endpoint
-async fn get_version() -> String {
-   // String object, basically new String("Version 1.0") in java,
-   // "version 1.0".to_string() also works.
-   String::from("Version 1.0")
-}
+/// Tên lệnh con để băm mật khẩu, dùng khi chuẩn bị dữ liệu seed cho database thật.
+const HASH_PASSWORD_COMMAND: &str = "hash-password";
 
-
-// 3. The Server Engine
-// Tokio is the async engine for rust, from a library.
 #[tokio::main]
-async fn main() {
-   // 4. The URL Router
-   // In Rust, URLs must be explicitly mapped to functions:
-   // When a GET request hit /api/health, run the health_check function.
-   let app = Router::new().route("/api/health", get(health_check))
-                          .route("/api/version", get(get_version));
-    
-   // 5. Opening The Network Port
-   // Must bind to 0.0.0.0 inside Docker so outside containers/host can reach it
-   // .await goes with async, whenever an operation touches the network(binding port, querying database),
-   // put .await at the end.
-   let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
-   println!("Rust backend listening on 0.0.0.0");
-   // Start the infinite loop listening for HTTP requests forever.
-   // .unwrap basically crashes the program, and then print out the error,
-   // If there was ever one.
-   axum::serve(listener, app).await.unwrap();
+async fn main() -> Result<(), Box<dyn Error>> {
+    let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) == Some(HASH_PASSWORD_COMMAND) {
+        return print_password_hash(&args);
+    }
+
+    // File .env là tùy chọn (production dùng biến môi trường thật), nên bỏ qua lỗi.
+    dotenvy::dotenv().ok();
+    init_tracing();
+
+    let config = Config::from_env()?;
+    if config.uses_default_jwt_secret() {
+        tracing::warn!("đang dùng JWT_SECRET mặc định, hãy đặt khóa riêng khi triển khai thật");
+    }
+    tokio::fs::create_dir_all(&config.upload_dir).await?;
+
+    let port = config.port;
+    let repos = build_repositories(&config).await?;
+    let app = build_app(AppState::new(config, repos));
+
+    let listener = TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], port))).await?;
+    tracing::info!(%port, "backend đã sẵn sàng");
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+    Ok(())
+}
+
+/// Lệnh `cargo run -- hash-password <mật khẩu>`: in chuỗi băm Argon2 ra stdout.
+fn print_password_hash(args: &[String]) -> Result<(), Box<dyn Error>> {
+    let plain = args
+        .get(2)
+        .ok_or("cách dùng: computer_shop_backend hash-password <mật khẩu>")?;
+    println!("{}", hash_password(plain)?);
+    Ok(())
+}
+
+/// Chờ Ctrl+C hoặc SIGTERM (Docker stop) để tắt server êm.
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        if let Err(err) = signal::ctrl_c().await {
+            tracing::error!(%err, "không lắng nghe được Ctrl+C");
+            // Nếu không đăng ký được tín hiệu thì không được tắt server vì lỗi này.
+            std::future::pending::<()>().await;
+        }
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        match signal::unix::signal(signal::unix::SignalKind::terminate()) {
+            Ok(mut stream) => {
+                stream.recv().await;
+            }
+            Err(err) => {
+                tracing::error!(%err, "không lắng nghe được SIGTERM");
+                std::future::pending::<()>().await;
+            }
+        }
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {},
+        () = terminate => {},
+    }
 }

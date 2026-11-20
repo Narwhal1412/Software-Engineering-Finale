@@ -1,0 +1,53 @@
+info:
+  name: "Register user mới"
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/register"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{newUserEmail}}",
+        "displayName": "Người Dùng Bruno",
+        "password": "123456",
+        "confirmPassword": "123456"
+      }
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Email duy nhất mỗi lần chạy để test chạy lại được mà không cần restart.
+        bru.setVar("newUserEmail", `bruno.${Date.now()}@pc.vn`);
+    - type: tests
+      code: |-
+        test("HTTP 201", function () {
+          expect(res.status).to.equal(201);
+        });
+
+        const isUser = (u) => typeof u.id === "number" && typeof u.email === "string" && typeof u.displayName === "string" && typeof u.phone === "string" && typeof u.address === "string" && ["user","admin"].includes(u.role) && !("passwordHash" in u) && !("password_hash" in u) && !("password" in u);
+
+        test("tạo role user, có token", function () {
+          expect(isUser(res.body.user)).to.equal(true);
+          expect(res.body.user.role).to.equal("user");
+          expect(res.body.user.phone).to.equal("");
+          expect(res.body.token).to.be.a("string").and.not.empty;
+        });
+    - type: after-response
+      code: |-
+        bru.setVar("newUserToken", res.body.token);
+        bru.setVar("newUserId", res.body.user.id);
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+

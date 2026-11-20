@@ -1,0 +1,40 @@
+# PATCH ĐẶT số lượng tuyệt đối (không cộng dồn).
+info:
+  name: "Set cart quantity"
+  type: http
+  seq: 78
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/cart/items/1"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "quantity": 5
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("sản phẩm 1 có số lượng 5", function () {
+          expect(res.body.find((c) => c.productId === 1).quantity).to.equal(5);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

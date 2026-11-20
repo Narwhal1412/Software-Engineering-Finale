@@ -1,0 +1,39 @@
+info:
+  name: "Admin đổi trạng thái đơn không tồn tại"
+  type: http
+  seq: 105
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/admin/orders/999999"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "status": "shipped"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 404", function () {
+          expect(res.status).to.equal(404);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Không tìm thấy đơn hàng");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+

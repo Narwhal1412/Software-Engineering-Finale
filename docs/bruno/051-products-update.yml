@@ -1,0 +1,48 @@
+info:
+  name: "Update product"
+  type: http
+  seq: 51
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Màn hình Dell 27 inch",
+        "specs": "2K IPS 165Hz, HDR400",
+        "price": 5990000,
+        "categoryId": {{categoryId}},
+        "imageUrl": null
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isProduct = (p) => typeof p.id === "number" && typeof p.name === "string" && typeof p.specs === "string" && typeof p.price === "number" && (p.categoryId === null || typeof p.categoryId === "number") && (p.imageUrl === null || typeof p.imageUrl === "string") && (p.pinnedAt === null || typeof p.pinnedAt === "string") && typeof p.createdAt === "string";
+
+        test("giá và specs đã đổi", function () {
+          expect(isProduct(res.body)).to.equal(true);
+          expect(res.body.id).to.equal(bru.getVar("productId"));
+          expect(res.body.price).to.equal(5990000);
+          expect(res.body.specs).to.equal("2K IPS 165Hz, HDR400");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

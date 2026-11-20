@@ -1,0 +1,32 @@
+info:
+  name: "Remove cart item"
+  type: http
+  seq: 82
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/cart/items/3"
+  headers:
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("giỏ còn 1 dòng (sản phẩm 1)", function () {
+          expect(res.body).to.have.length(1);
+          expect(res.body[0].productId).to.equal(1);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

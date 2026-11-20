@@ -1,0 +1,32 @@
+# Xóa danh mục KHÔNG xóa sản phẩm: category_id của sản phẩm về null (ON DELETE SET NULL).
+info:
+  name: "Delete category"
+  type: http
+  seq: 121
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/categories/{{categoryId}}"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 204", function () {
+          expect(res.status).to.equal(204);
+        });
+
+        test("không có body", function () {
+          expect(res.body === "" || res.body === undefined || res.body === null).to.equal(true);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "204"
+
+settings:
+  encodeUrl: true
+

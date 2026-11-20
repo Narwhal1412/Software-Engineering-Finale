@@ -1,0 +1,40 @@
+info:
+  name: "Rename category"
+  type: http
+  seq: 33
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/categories/{{categoryId}}"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Màn hình gaming"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("tên mới, giữ nguyên id", function () {
+          expect(res.body.id).to.equal(bru.getVar("categoryId"));
+          expect(res.body.name).to.equal("Màn hình gaming");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

@@ -1,8 +1,43 @@
 [package]
-name = "backend_api"
+name = "computer_shop_backend"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+description = "REST API backend của web quản lý cửa hàng máy tính (axum + tokio)"
+publish = false
 
+[lib]
+name = "computer_shop_backend"
+path = "src/lib.rs"
+
+[[bin]]
+name = "computer_shop_backend"
+path = "src/main.rs"
+
+# Phiên bản được ghim (=) để mọi thành viên build ra cùng kết quả.
+# Sau lần `cargo build` đầu tiên hãy commit luôn Cargo.lock.
 [dependencies]
-axum = "0.7"
-tokio = { version = "1.0", features = ["full"] }
+axum = { version = "=0.7.9", features = ["multipart"] }
+tokio = { version = "=1.41.1", features = ["full"] }
+tower-http = { version = "=0.6.2", features = ["cors", "trace", "fs"] }
+serde = { version = "=1.0.215", features = ["derive"] }
+serde_json = "=1.0.133"
+chrono = { version = "=0.4.38", features = ["serde"] }
+async-trait = "=0.1.83"
+thiserror = "=1.0.69"
+tracing = "=0.1.41"
+tracing-subscriber = { version = "=0.3.19", features = ["env-filter"] }
+dotenvy = "=0.15.7"
+argon2 = { version = "=0.5.3", features = ["std"] }
+jsonwebtoken = "=9.3.0"
+
+# Argon2 cố tình chậm; bản debug không tối ưu chậm gấp hàng chục lần,
+# làm seed dữ liệu và test bị lâu. Chỉ tối ưu riêng hai crate này.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
+
+# Chỉ dùng cho test tích hợp (`tower::ServiceExt::oneshot`).
+[dev-dependencies]
+tower = { version = "=0.5.2", features = ["util"] }

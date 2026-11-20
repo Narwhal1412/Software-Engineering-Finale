@@ -1,0 +1,45 @@
+# Trả về toàn bộ giỏ mới.
+info:
+  name: "Add cart item"
+  type: http
+  seq: 70
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/cart/items"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "productId": 1,
+        "quantity": 2
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isCartLine = (c) => typeof c.productId === "number" && typeof c.quantity === "number" && c.product && c.product.id === c.productId;
+
+        test("giỏ có 1 dòng: sản phẩm 1 x2", function () {
+          expect(res.body).to.have.length(1);
+          expect(isCartLine(res.body[0])).to.equal(true);
+          expect(res.body[0].quantity).to.equal(2);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

@@ -1,0 +1,37 @@
+info:
+  name: "Set cart quantity không token"
+  type: http
+  seq: 81
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/cart/items/1"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+  body:
+    type: json
+    data: |-
+      {
+        "quantity": 2
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 401", function () {
+          expect(res.status).to.equal(401);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Cần đăng nhập");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+

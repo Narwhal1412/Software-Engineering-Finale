@@ -1,0 +1,31 @@
+info:
+  name: "Delete category không tồn tại"
+  type: http
+  seq: 118
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/categories/999999"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 404", function () {
+          expect(res.status).to.equal(404);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Không tìm thấy danh mục");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+

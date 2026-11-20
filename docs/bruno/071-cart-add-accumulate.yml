@@ -1,0 +1,41 @@
+info:
+  name: "Add cart item cộng dồn"
+  type: http
+  seq: 71
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/cart/items"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "productId": 1,
+        "quantity": 1
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("thêm lại cùng sản phẩm thì cộng dồn 2+1=3", function () {
+          expect(res.body).to.have.length(1);
+          expect(res.body[0].quantity).to.equal(3);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

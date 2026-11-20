@@ -1,0 +1,31 @@
+info:
+  name: "Delete product không tồn tại"
+  type: http
+  seq: 124
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/products/999999"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 404", function () {
+          expect(res.status).to.equal(404);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Không tìm thấy sản phẩm");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+

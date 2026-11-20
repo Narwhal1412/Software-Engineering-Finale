@@ -1,0 +1,40 @@
+# Cần fixtures/big.png dài 2.100.000 byte (lệnh tạo ở mục 2 đầu file). Giữ trong khoảng 2 MB đến 2 MB + 64 KB;
+# lớn hơn nữa sẽ bị chặn bởi giới hạn body và trả 400 "Tệp tải lên không hợp lệ hoặc quá lớn (tối đa 2 MB)".
+info:
+  name: "Upload ảnh quá 2 MB"
+  type: http
+  seq: 64
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/uploads"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - fixtures/big.png
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 413", function () {
+          expect(res.status).to.equal(413);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Ảnh tối đa 2 MB");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "413"
+
+settings:
+  encodeUrl: true
+

@@ -1,0 +1,36 @@
+# Giỏ seed của khach1: sản phẩm 2 x2 và sản phẩm 6 x1, sắp theo productId (A19).
+info:
+  name: "Get cart khach1 (seed)"
+  type: http
+  seq: 68
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/cart"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isCartLine = (c) => typeof c.productId === "number" && typeof c.quantity === "number" && c.product && c.product.id === c.productId;
+
+        test("2 dòng seed đúng thứ tự", function () {
+          expect(res.body).to.have.length(2);
+          res.body.forEach((c) => expect(isCartLine(c)).to.equal(true));
+          expect(res.body.map((c) => [c.productId, c.quantity])).to.deep.equal([[2, 2], [6, 1]]);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

@@ -1,0 +1,42 @@
+info:
+  name: "Pin product"
+  type: http
+  seq: 55
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/products/{{productId}}/pin"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "pinned": true
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isProduct = (p) => typeof p.id === "number" && typeof p.name === "string" && typeof p.specs === "string" && typeof p.price === "number" && (p.categoryId === null || typeof p.categoryId === "number") && (p.imageUrl === null || typeof p.imageUrl === "string") && (p.pinnedAt === null || typeof p.pinnedAt === "string") && typeof p.createdAt === "string";
+
+        test("pinnedAt có giá trị thời gian", function () {
+          expect(isProduct(res.body)).to.equal(true);
+          expect(res.body.pinnedAt).to.be.a("string").and.not.empty;
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

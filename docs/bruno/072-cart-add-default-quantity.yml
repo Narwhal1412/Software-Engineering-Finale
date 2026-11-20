@@ -1,0 +1,42 @@
+# Thiếu quantity thì mặc định 1.
+info:
+  name: "Add cart item không gửi quantity"
+  type: http
+  seq: 72
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/cart/items"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "productId": 3
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("giỏ có 2 dòng, sản phẩm 3 số lượng 1", function () {
+          expect(res.body).to.have.length(2);
+          const line = res.body.find((c) => c.productId === 3);
+          expect(line.quantity).to.equal(1);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

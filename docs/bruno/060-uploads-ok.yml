@@ -1,0 +1,42 @@
+# Cần tệp fixtures/pixel.png (xem hướng dẫn ở đầu file). Lưu uploadedUrl.
+info:
+  name: "Upload ảnh PNG"
+  type: http
+  seq: 60
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/uploads"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - fixtures/pixel.png
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 201", function () {
+          expect(res.status).to.equal(201);
+        });
+
+        test("trả {url} dạng /uploads/<tên>.png", function () {
+          expect(res.body.url).to.match(/^\/uploads\/[^\/]+\.png$/);
+        });
+    - type: after-response
+      code: |-
+        bru.setVar("uploadedUrl", res.body.url);
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+

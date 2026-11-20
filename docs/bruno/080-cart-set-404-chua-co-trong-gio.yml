@@ -1,0 +1,39 @@
+info:
+  name: "Set cart quantity sản phẩm chưa có trong giỏ"
+  type: http
+  seq: 80
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/cart/items/6"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "quantity": 2
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 404", function () {
+          expect(res.status).to.equal(404);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Không tìm thấy sản phẩm trong giỏ hàng");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+

@@ -1,0 +1,7 @@
+# Không đưa vào ngữ cảnh build: nhẹ hơn, và không lộ bí mật.
+target/
+uploads/
+.env
+.git
+*.md
+tests/

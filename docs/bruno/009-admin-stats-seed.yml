@@ -1,0 +1,32 @@
+# CHỈ đúng trên seed mới (restart backend trước khi chạy). Chạy sớm, trước các request ghi dữ liệu.
+info:
+  name: "Stats trên dữ liệu seed"
+  type: http
+  seq: 9
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/stats"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("khớp số liệu seed (DATABASE_SPEC mục 6)", function () {
+          expect(res.body).to.deep.equal({ products: 7, users: 4, orders: 7, revenue: 118370000 });
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

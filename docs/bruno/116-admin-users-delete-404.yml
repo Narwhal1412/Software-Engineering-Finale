@@ -1,0 +1,32 @@
+# Xóa lần hai cùng id.
+info:
+  name: "Admin xóa user không tồn tại"
+  type: http
+  seq: 116
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/admin/users/{{newUserId}}"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 404", function () {
+          expect(res.status).to.equal(404);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Không tìm thấy thành viên");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+

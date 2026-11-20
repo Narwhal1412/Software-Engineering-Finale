@@ -1,0 +1,46 @@
+# khach3: seed chưa có đơn, giỏ trống. Lưu user3Token, user3Id.
+info:
+  name: "Login khach3"
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/login"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{user3Email}}",
+        "password": "{{userPassword}}"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isUser = (u) => typeof u.id === "number" && typeof u.email === "string" && typeof u.displayName === "string" && typeof u.phone === "string" && typeof u.address === "string" && ["user","admin"].includes(u.role) && !("passwordHash" in u) && !("password_hash" in u) && !("password" in u);
+
+        test("role user", function () {
+          expect(isUser(res.body.user)).to.equal(true);
+          expect(res.body.user.email).to.equal("khach3@pc.vn");
+        });
+    - type: after-response
+      code: |-
+        bru.setVar("user3Token", res.body.token);
+        bru.setVar("user3Id", res.body.user.id);
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

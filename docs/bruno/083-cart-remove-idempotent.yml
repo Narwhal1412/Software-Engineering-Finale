@@ -1,0 +1,32 @@
+# Xóa dòng không tồn tại vẫn 200 và trả giỏ hiện tại.
+info:
+  name: "Remove cart item không có trong giỏ (idempotent)"
+  type: http
+  seq: 83
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/cart/items/3"
+  headers:
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        test("giỏ không đổi", function () {
+          expect(res.body).to.have.length(1);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

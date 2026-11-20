@@ -1,0 +1,40 @@
+# 7 đơn seed + 2 đơn vừa đặt = 9. userEmail chỉ có ở endpoint này (A25).
+info:
+  name: "Admin list all orders"
+  type: http
+  seq: 97
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/admin/orders"
+  headers:
+    - name: Authorization
+      value: "Bearer {{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+        const isOrder = (o) => typeof o.id === "number" && Array.isArray(o.items) && o.items.every((i) => typeof i.productId === "number" && typeof i.name === "string" && typeof i.price === "number" && typeof i.quantity === "number") && typeof o.total === "number" && ["pending","confirmed","shipped","completed","cancelled"].includes(o.status) && ["cod","bank"].includes(o.paymentMethod) && typeof o.fullName === "string" && typeof o.phone === "string" && typeof o.address === "string" && typeof o.createdAt === "string";
+
+        test("mọi đơn có userEmail, đơn mới nhất đứng đầu", function () {
+          expect(res.body).to.have.length(9);
+          res.body.forEach((o) => {
+            expect(isOrder(o)).to.equal(true);
+            expect(o.userEmail).to.be.a("string");
+          });
+          const mine = res.body.find((o) => o.id === bru.getVar("orderId"));
+          expect(mine.userEmail).to.equal("khach1@pc.vn");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+

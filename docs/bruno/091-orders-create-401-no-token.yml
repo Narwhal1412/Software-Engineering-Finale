@@ -1,0 +1,40 @@
+info:
+  name: "Place order không token"
+  type: http
+  seq: 91
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+  body:
+    type: json
+    data: |-
+      {
+        "fullName": "Ẩn Danh",
+        "phone": "0900000000",
+        "address": "TP.HCM",
+        "paymentMethod": "cod"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 401", function () {
+          expect(res.status).to.equal(401);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Cần đăng nhập");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+

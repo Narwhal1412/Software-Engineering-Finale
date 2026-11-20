@@ -1,0 +1,40 @@
+info:
+  name: "Add cart item sản phẩm không tồn tại"
+  type: http
+  seq: 73
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/cart/items"
+  headers:
+    - name: Content-Type
+      value: "application/json"
+    - name: Authorization
+      value: "Bearer {{user3Token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "productId": 999999,
+        "quantity": 1
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("HTTP 404", function () {
+          expect(res.status).to.equal(404);
+        });
+
+        test("body lỗi có dạng {message} đúng nội dung", function () {
+          expect(res.body).to.have.property("message", "Không tìm thấy sản phẩm");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+

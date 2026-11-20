@@ -8,7 +8,7 @@ const newUser = (n = 1) => ({
   confirmPassword: '123456'
 });
 
-describe('api (chế độ mock)', () => {
+/**describe('api (chế độ mock)', () => {
   let api;
   beforeEach(async () => {
     vi.resetModules();
@@ -220,13 +220,13 @@ describe('api (chế độ mock)', () => {
       expect((await api.uploadImage(ok)).url).toMatch(/^data:image\/png/);
     });
   });
-});
+});*/
 
 describe('api (nối backend thật)', () => {
   let api;
   beforeEach(async () => {
     vi.resetModules();
-    vi.stubEnv('VITE_USE_MOCK', 'false');
+    //vi.stubEnv('VITE_USE_MOCK', 'false');
     api = (await import('./api.js')).default;
     return () => {
       vi.unstubAllEnvs();

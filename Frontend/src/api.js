@@ -26,7 +26,7 @@
 // product = {id, name, specs, price, categoryId, imageUrl (url|null), pinnedAt (ISO|null), createdAt}
 // user    = {id, email, displayName, phone, address, role: 'user'|'admin'}
 // Header: Authorization: Bearer <token>. Lỗi: HTTP 4xx kèm {message}. HTTP 401 khi đã có token = hết phiên, frontend tự đăng xuất.
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false',
+// const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false',
   API_BASE = '/api'; // VITE_USE_MOCK=false khi nối backend thật
 const tk = () => localStorage.getItem('token');
 
@@ -44,7 +44,7 @@ async function parse(r, fallback) {
 }
 
 async function call(method, path, body) {
-  if (USE_MOCK) return mock(method, path, body);
+  // if (USE_MOCK) return mock(method, path, body);
   const r = await fetch(API_BASE + path, {
     method,
     headers: { 'Content-Type': 'application/json', ...(tk() ? { Authorization: 'Bearer ' + tk() } : {}) },
@@ -69,7 +69,7 @@ const api = {
   uploadImage: async file => {
     if (file.size > 2 * 1024 * 1024) throw new Error('Ảnh tối đa 2 MB');
     if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error('Chỉ nhận ảnh JPG, PNG hoặc WebP');
-    if (USE_MOCK)
+    /**if (USE_MOCK)
       return {
         url: await new Promise((ok, no) => {
           const r = new FileReader();
@@ -77,7 +77,7 @@ const api = {
           r.onerror = () => no(new Error('Không đọc được ảnh'));
           r.readAsDataURL(file);
         })
-      };
+      };*/
     const fd = new FormData();
     fd.append('file', file);
     const r = await fetch(API_BASE + '/uploads', {
@@ -104,7 +104,7 @@ const api = {
 
 // ---------- MOCK (chỉ để demo; xóa khi có backend) ----------
 // Tài khoản admin demo: admin@pc.vn / 123456. Sản phẩm reset khi tải lại trang, tài khoản được giữ trong localStorage.
-const now = n => new Date(Date.now() - n * 864e5).toISOString();
+/**const now = n => new Date(Date.now() - n * 864e5).toISOString();
 const db = {
   users: JSON.parse(localStorage.getItem('mockUsers') || 'null') || [
     { id: 1, email: 'admin@pc.vn', displayName: 'Quản trị', password: '123456', role: 'admin' }
@@ -415,6 +415,6 @@ function mock(m, p, b) {
     return db.orders.filter(o => o.userId === u.id);
   }
   fail('Endpoint không tồn tại');
-}
+} */
 
 export default api;

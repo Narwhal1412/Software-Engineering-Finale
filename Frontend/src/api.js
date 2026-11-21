@@ -17,6 +17,7 @@
 //   POST   /api/orders {fullName, phone, address, paymentMethod: 'cod'|'bank'} -> order
 //          (backend tạo đơn từ giỏ hàng, lấy giá từ DB, lưu snapshot, xóa giỏ, status 'pending')
 //   GET    /api/orders -> [order]  (đơn của người dùng hiện tại)
+//   PATCH  /api/orders/:id/cancel -> order  (khách tự hủy đơn của mình, chỉ khi status 'pending'; 404 nếu không phải đơn của mình, 409 nếu đã qua 'pending')
 //   GET    /api/me -> user ; PUT /api/me {displayName, phone, address} -> user      (cần đăng nhập)
 //   GET    /api/admin/stats -> {products, users, orders, revenue}               (admin; doanh thu bỏ đơn đã hủy)
 //   GET    /api/admin/orders -> [order + userEmail] ; PATCH /api/admin/orders/:id {status}   (admin)
@@ -89,7 +90,8 @@ const api = {
   setQty: (productId, quantity) => call('PATCH', '/cart/items/' + productId, { quantity }),
   removeFromCart: productId => call('DELETE', '/cart/items/' + productId),
   placeOrder: b => call('POST', '/orders', b),
-  orders: () => call('GET', '/orders')
+  orders: () => call('GET', '/orders'),
+  cancelOrder: id => call('PATCH', `/orders/${id}/cancel`)
 };
 
 export default api;

@@ -17,6 +17,7 @@ use crate::middleware::auth::AuthUser;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/orders", get(list_mine).post(place_order))
+        .route("/orders/:id/cancel", patch(cancel_order))
         .route("/admin/orders", get(list_all))
         .route("/admin/orders/:id", patch(update_status))
 }
@@ -37,6 +38,15 @@ async fn list_mine(
     actor: AuthUser,
 ) -> Result<Json<Vec<OrderResponse>>, AppError> {
     Ok(Json(state.services.orders.list_mine(actor).await?))
+}
+
+/// `PATCH /orders/:id/cancel` -> 200 order (khách tự hủy đơn `pending` của mình).
+async fn cancel_order(
+    State(state): State<AppState>,
+    actor: AuthUser,
+    Path(id): Path<i64>,
+) -> Result<Json<OrderResponse>, AppError> {
+    Ok(Json(state.services.orders.cancel_order(actor, id).await?))
 }
 
 /// `GET /admin/orders` -> 200 `[order + userEmail]`.

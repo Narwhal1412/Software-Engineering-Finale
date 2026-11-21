@@ -64,7 +64,7 @@ export const Field = ({ id, label, ...p }) => (
   </>
 );
 
-export function OrderBox({ o, onStatus }) {
+export function OrderBox({ o, onStatus, onCancel }) {
   return (
     <div className="ord">
       <div className="line">
@@ -94,6 +94,13 @@ export function OrderBox({ o, onStatus }) {
         {o.fullName}, {o.phone}, {o.address}
       </div>
       <strong>{vnd(o.total)}</strong>
+      {onCancel && o.status === 'pending' && (
+        <div className="row">
+          <button className="btn" onClick={() => onCancel(o.id)} aria-label={'Hủy đơn ' + o.id}>
+            Hủy đơn
+          </button>
+        </div>
+      )}
     </div>
   );
 }

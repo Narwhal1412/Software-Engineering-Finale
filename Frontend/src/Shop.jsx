@@ -205,13 +205,21 @@ function OrdersModal({ onClose }) {
   useEffect(() => {
     run(async () => setList((await api.orders()).slice().reverse()));
   }, []);
+  const cancel = id => {
+    if (!window.confirm('Bạn có chắc muốn hủy đơn #' + id + '?')) return;
+    run(async () => {
+      const updated = await api.cancelOrder(id);
+      setList(l => l.map(o => (o.id === id ? updated : o)));
+      toast('Đã hủy đơn #' + id);
+    });
+  };
   return (
     <Modal title="Đơn hàng của tôi" wide onClose={onClose}>
       <div className="scroll">
         {list === null ? (
           'Đang tải...'
         ) : list.length ? (
-          list.map(o => <OrderBox key={o.id} o={o} />)
+          list.map(o => <OrderBox key={o.id} o={o} onCancel={cancel} />)
         ) : (
           <div className="empty">Bạn chưa có đơn hàng nào.</div>
         )}

@@ -462,6 +462,38 @@ async fn order_status_rules() {
     assert!(matches!(err, AppError::Forbidden(_)));
 }
 
+#[tokio::test]
+async fn customer_cancels_only_own_pending_order() {
+    let (repos, services) = fixture();
+    let admin = make_user(&repos, "admin@x.vn", Role::Admin).await;
+    let user = make_user(&repos, "c@x.vn", Role::User).await;
+    let other = make_user(&repos, "d@x.vn", Role::User).await;
+    let product = make_product(&repos, "RAM", 100).await;
+
+    services.carts.add_item(user, add_request(product, Some(1))).await.expect("thêm");
+    let first = services.orders.place_order(user, order_request("0901234567", "cod")).await.expect("đặt hàng");
+    services.carts.add_item(user, add_request(product, Some(1))).await.expect("thêm");
+    let second = services.orders.place_order(user, order_request("0901234567", "cod")).await.expect("đặt hàng");
+
+    let err = services.orders.cancel_order(other, first.id).await.unwrap_err();
+    assert!(matches!(err, AppError::NotFound(_)), "không hủy được đơn của người khác");
+    let err = services.orders.cancel_order(user, 999).await.unwrap_err();
+    assert!(matches!(err, AppError::NotFound(_)));
+
+    let cancelled = services.orders.cancel_order(user, first.id).await.expect("hủy đơn pending");
+    assert_eq!(cancelled.status, OrderStatus::Cancelled);
+    let err = services.orders.cancel_order(user, first.id).await.unwrap_err();
+    assert!(matches!(err, AppError::Conflict(_)), "hủy lần hai bị từ chối");
+
+    services
+        .orders
+        .update_status(admin, second.id, status_request("confirmed"))
+        .await
+        .expect("xác nhận");
+    let err = services.orders.cancel_order(user, second.id).await.unwrap_err();
+    assert!(matches!(err, AppError::Conflict(_)), "đơn đã xác nhận không tự hủy được");
+}
+
 // ---------- StatsService ----------
 
 #[tokio::test]

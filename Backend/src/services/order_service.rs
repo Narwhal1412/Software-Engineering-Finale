@@ -48,6 +48,23 @@ impl OrderService {
         Ok(orders.into_iter().map(Into::into).collect())
     }
 
+    /// Khách tự hủy đơn của chính mình, chỉ khi đơn còn `pending` (chưa được admin xác nhận).
+    /// Đơn của người khác trả 404 (không tiết lộ đơn có tồn tại); đơn đã qua `pending` trả 409.
+    pub async fn cancel_order(&self, actor: AuthUser, id: i64) -> Result<OrderResponse, AppError> {
+        let order = self
+            .orders
+            .find_by_id(id)
+            .await?
+            .filter(|order| order.user_id == actor.id)
+            .ok_or_else(|| AppError::NotFound("Không tìm thấy đơn hàng".to_owned()))?;
+        ensure_cancellable(order.status)?;
+        Ok(self
+            .orders
+            .update_status(id, OrderStatus::Cancelled)
+            .await?
+            .into())
+    }
+
     /// Mọi đơn hàng kèm email người đặt (admin).
     pub async fn list_all(&self, actor: AuthUser) -> Result<Vec<AdminOrderResponse>, AppError> {
         require_admin(actor)?;
@@ -90,6 +107,17 @@ fn to_draft(request: CreateOrderRequest) -> Result<OrderDraft, AppError> {
         address,
         payment_method,
     })
+}
+
+/// Khách chỉ được hủy khi đơn còn chờ xác nhận; sau đó việc hủy phải do admin xử lý.
+fn ensure_cancellable(status: OrderStatus) -> Result<(), AppError> {
+    match status {
+        OrderStatus::Pending => Ok(()),
+        OrderStatus::Cancelled => Err(AppError::Conflict("Đơn hàng đã được hủy trước đó".to_owned())),
+        _ => Err(AppError::Conflict(
+            "Đơn hàng đã được xác nhận, không thể tự hủy. Vui lòng liên hệ cửa hàng".to_owned(),
+        )),
+    }
 }
 
 /// Đơn đã hoàn tất hoặc đã hủy là trạng thái cuối: không mở lại hay chuyển sang trạng thái khác,

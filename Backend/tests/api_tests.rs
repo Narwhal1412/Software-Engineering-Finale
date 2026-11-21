@@ -872,6 +872,31 @@ async fn order_keeps_the_price_at_purchase_time() {
 
 #[tokio::test]
 #[ignore = "cần MariaDB đã nạp init.sql"]
+async fn customer_can_cancel_own_pending_order_only() {
+    let app = app().await;
+    let admin = admin_token(&app).await;
+    let (customer, _, _) = register_customer(&app).await;
+    let (stranger, _, _) = register_customer(&app).await;
+    let product_id = create_product(&app, &admin, &unique("sp"), 1_000_000, None).await;
+    add_to_cart(&app, &customer, product_id, 1).await;
+    let order = place_order(&app, &customer).await;
+    let uri = format!("/api/orders/{}/cancel", order["id"]);
+
+    let (status, _) = send(&app, "PATCH", &uri, None, None).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    let (status, _) = send(&app, "PATCH", &uri, Some(&stranger), None).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+
+    let (status, cancelled) = send(&app, "PATCH", &uri, Some(&customer), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(cancelled["status"], "cancelled");
+    let (status, body) = send(&app, "PATCH", &uri, Some(&customer), None).await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert!(body["message"].is_string());
+}
+
+#[tokio::test]
+#[ignore = "cần MariaDB đã nạp init.sql"]
 async fn admin_updates_order_status_and_final_states_are_locked() {
     let app = app().await;
     let admin = admin_token(&app).await;

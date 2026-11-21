@@ -11,7 +11,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.computer-shop.rule=Host(`${APP_HOST:?Hãy đặt APP_HOST}`)"
-      - "traefik.http.routers.computer-shop.tls.certresolver=myresolver"
+      - "traefik.http.routers.computer-shop.tls=true"
       - "traefik.http.routers.computer-shop.entrypoints=websecure"
     networks:
       - default          # để nói chuyện với backend

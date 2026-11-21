@@ -13,6 +13,8 @@ services:
       - "traefik.http.routers.computer-shop.rule=Host(`${APP_HOST:?Hãy đặt APP_HOST}`)"
       - "traefik.http.routers.computer-shop.tls=true"
       - "traefik.http.routers.computer-shop.entrypoints=websecure"
+      # Authentication and Authorization via authenntik
+      - "traefik.http.routers.computer-shop.middlewares=authentik@docker"
     networks:
       # - default          # để nói chuyện với backend
       - komodo_default   # để Traefik thấy frontend

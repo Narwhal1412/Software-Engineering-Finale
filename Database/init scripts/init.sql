@@ -116,13 +116,13 @@ INSERT INTO categories (id, name) VALUES
  (1, 'CPU'), (2, 'Card đồ họa'), (3, 'RAM'), (4, 'Ổ cứng'), (5, 'PC lắp sẵn');
 
 INSERT INTO products (id, name, specs, price, category_id, image_url, pinned_at, created_at) VALUES
- (1, 'Ryzen 7 7800X3D',        '8 nhân 16 luồng, 4.2 GHz, AM5',              9490000, 1, NULL, UTC_TIMESTAMP(6) - INTERVAL 1 DAY, UTC_TIMESTAMP(6) - INTERVAL 9 DAY),
- (2, 'Core i5-14600K',         '14 nhân, 5.3 GHz, LGA1700',                  7290000, 1, NULL, NULL, UTC_TIMESTAMP(6) - INTERVAL 8 DAY),
- (3, 'GeForce RTX 4070 Super', '12 GB GDDR6X, 3 quạt',                      16990000, 2, NULL, NULL, UTC_TIMESTAMP(6) - INTERVAL 6 DAY),
- (4, 'Radeon RX 7800 XT',      '16 GB GDDR6, PCIe 4.0',                     12790000, 2, NULL, NULL, UTC_TIMESTAMP(6) - INTERVAL 5 DAY),
- (5, 'Kingston Fury 32GB',     'DDR5 6000 MHz, 2x16 GB',                     2890000, 3, NULL, NULL, UTC_TIMESTAMP(6) - INTERVAL 4 DAY),
- (6, 'Samsung 980 Pro 1TB',    'NVMe Gen4, đọc 7000 MB/s',                   2650000, 4, NULL, NULL, UTC_TIMESTAMP(6) - INTERVAL 3 DAY),
- (7, 'PC Gaming Forge R7',     'R7 7800X3D, RTX 4070 Super, 32GB, 1TB',     36900000, 5, NULL, NULL, UTC_TIMESTAMP(6) - INTERVAL 2 DAY);
+ (1, 'Ryzen 7 7800X3D',        '8 nhân 16 luồng, 4.2 GHz, AM5',              9490000, 1, 'https://product.hstatic.net/1000333506/product/5478-7800x3d-tray_5a74882bb94b471f884e41e2136abcf9.jpg', UTC_TIMESTAMP(6) - INTERVAL 1 DAY, UTC_TIMESTAMP(6) - INTERVAL 9 DAY),
+ (2, 'Core i5-14600K',         '14 nhân, 5.3 GHz, LGA1700',                  7290000, 1, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSna_VCCxsNUlPFwlss_kxIfFuT8jFWctorJkx4aOcgpw&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 8 DAY),
+ (3, 'GeForce RTX 4070 Super', '12 GB GDDR6X, 3 quạt',                      16990000, 2, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlTskthUu3yDV4AZpJ_pYtZBeCT6wub-zMDIzv9jnHhA&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 6 DAY),
+ (4, 'Radeon RX 7800 XT',      '16 GB GDDR6, PCIe 4.0',                     12790000, 2, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaS8Rgvd6QU6gCvMUHZE7ut-v2lnjBl_qmV-Jb7bBCrw&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 5 DAY),
+ (5, 'Kingston Fury 32GB',     'DDR5 6000 MHz, 2x16 GB',                     2890000, 3, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRR6-PWEUCA2gLvyFJtmH6BtJfayCBvWdD0oFhlPRZivw&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 4 DAY),
+ (6, 'Samsung 980 Pro 1TB',    'NVMe Gen4, đọc 7000 MB/s',                   2650000, 4, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSj4_n1Zyn0tXimVq9LIEqVAO6LQQy_RtxxO3gy6jDvZQ&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 3 DAY),
+ (7, 'PC Gaming Forge R7',     'R7 7800X3D, RTX 4070 Super, 32GB, 1TB',     36900000, 5, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcStj7UWoebLS-HhWwY0nGqiQkhzMXuAXKnnAGqWcTcl8w&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 2 DAY);
 
 INSERT INTO cart_items (user_id, product_id, quantity) VALUES (2, 6, 1), (2, 2, 2);
 

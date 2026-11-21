@@ -1,0 +1,85 @@
+# =============================================================================
+# compose.test.yaml: chạy toàn bộ test (backend + frontend) trong Docker, không cần cài Rust/Node.
+# Đặt ở THƯ MỤC GỐC của repo (cùng cấp với Backend/, frontend/, Database/).
+#
+# Cách chạy nhanh:  ./run-tests.sh   (Linux/macOS/Git Bash)   hoặc   .\run-tests.ps1   (PowerShell)
+# Hoặc từng phần:
+#   docker compose -f compose.test.yaml run --rm backend-tests
+#   docker compose -f compose.test.yaml run --rm frontend-tests
+#   docker compose -f compose.test.yaml run --rm backend-lint     # cargo fmt --check + clippy
+#
+# Lần đầu chạy lâu (tải thư viện + biên dịch). Các lần sau nhanh nhờ volume cache.
+# Database test nằm trong RAM (tmpfs), mỗi lần chạy đều nạp lại init.sql từ đầu nên luôn sạch.
+# File này độc lập với compose.yaml chính, không đụng tới dữ liệu thật của bạn.
+# =============================================================================
+name: shop-test
+
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: appdb
+      MARIADB_USER: app
+      MARIADB_PASSWORD: change-me
+    tmpfs:
+      - /var/lib/mysql
+    volumes:
+      # init.sql được image chạy tự động ở lần khởi tạo đầu tiên (luôn là lần đầu vì dùng tmpfs).
+      - "./Database/init scripts:/docker-entrypoint-initdb.d:ro"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 10s
+
+  backend-tests:
+    image: rust:1-bookworm
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: app
+      DB_PASSWORD: change-me
+      DB_NAME: appdb
+      JWT_SECRET: test-secret-0123456789
+      UPLOAD_DIR: /tmp/uploads
+      CARGO_TARGET_DIR: /cargo-target
+    volumes:
+      - ./Backend:/app
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-target:/cargo-target
+    # --include-ignored: chạy cả test MariaDB; --test-threads=1: vài test so sánh số liệu toàn cục.
+    command: cargo test -- --include-ignored --test-threads=1
+
+  backend-lint:
+    image: rust:1-bookworm
+    working_dir: /app
+    profiles: ["lint"]
+    environment:
+      CARGO_TARGET_DIR: /cargo-target
+    volumes:
+      - ./Backend:/app
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-target:/cargo-target
+    command: >
+      sh -c "rustup component add rustfmt clippy
+      && cargo fmt --check
+      && cargo clippy --all-targets -- -D warnings"
+
+  frontend-tests:
+    image: node:20-slim
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    command: sh -c "npm ci && npm test"
+
+volumes:
+  cargo-registry:
+  cargo-target:
+  frontend-node-modules:

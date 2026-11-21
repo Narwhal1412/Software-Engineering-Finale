@@ -64,16 +64,34 @@ flowchart LR
 
 ```
 .
-├── Backend/          	  # API service
-├── Frontend/         	  # Web UI
-├── Database/             # Database sqls
-├── .woodpecker 	  # CI/CD Pipeline instructions yaml files
-├── docs/             	  # Plans, notes, design decisions
-├── .env.example      	  # Template for required environment variables
-├── compose.yaml      	  # Defines how the services run together
-├── compose.override.yaml # Override ports mapping for local deployment
-├── compose.prod.yaml 	  # Override for adding labels for CI/CD
-├── .gitignore 		  # Files ignored(.env) when pushed to git 
+├── .github/                  # CODEOWNERS
+├── .woodpecker/              # CI/CD pipeline instructions (yaml files)
+├── Backend/                  # API service (Rust + axum)
+│   ├── src/                  #   controllers, services, repositories, models, dtos, middleware
+│   ├── tests/                #   api_tests.rs, logic_tests.rs, mysql_repository_tests.rs
+│   ├── Cargo.toml
+│   ├── Dockerfile
+│   └── README.md
+├── Frontend/                 # Web UI (React + Vite)
+│   ├── src/                  #   Shop, Admin, App, api.js, ui.jsx, styles.css and their tests
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   ├── package.json
+│   └── README.md
+├── Database/
+│   └── init scripts/         # init.sql: tables + seed data
+├── docs/
+│   ├── API.md                #   API contract between frontend and backend
+│   ├── Requirements.txt      #   Team plan and requirements notes
+│   └── bruno/                #   Bruno API test collection
+├── .env.example              # Template for required environment variables
+├── .gitignore                # Files ignored (.env) when pushed to git
+├── compose.yaml              # Defines how the services run together
+├── compose.override.yaml     # Override ports mapping for local deployment
+├── compose.prod.yaml         # Override for adding labels for CI/CD
+├── compose.test.yaml         # Services used to run all tests in Docker
+├── run-tests.sh              # Runs all tests (Linux / macOS / Git Bash)
+├── run-tests.ps1             # Runs all tests (Windows PowerShell)
 └── README.md
 ```
 
@@ -98,6 +116,50 @@ docker compose up --build
 > Hiện backend chạy bằng **database giả (mock in-memory)**; MariaDB chạy cạnh để kiểm tra `init.sql`. Tài khoản demo (mật khẩu `123456`): `admin@pc.vn`, `khach1@pc.vn`, `khach2@pc.vn`, `khach3@pc.vn`. Xem [Backend/README.md](Backend/README.md).
 
 Stop everything with `docker compose down`.
+
+## Manual Setup
+
+Run the services directly on your machine instead of in Docker. Requires Rust (stable), Node.js 20+, and a running MariaDB. You can start only the database with Docker:
+
+```bash
+docker compose up -d db
+```
+
+**Backend** (terminal 1):
+
+```bash
+cd Backend
+cp .env.example .env   # DB_HOST=localhost by default; adjust DB_* and JWT_SECRET
+cargo run
+```
+
+The API listens on http://localhost:3000.
+
+**Frontend** (terminal 2):
+
+```bash
+cd Frontend
+npm ci
+npm run dev
+```
+
+Open http://localhost:5173. The Vite dev server proxies `/api` and `/uploads` to `http://localhost:3000` (set `API_TARGET` to change it).
+
+## Running Tests
+
+All tests (backend and frontend) are run only through the test script. Docker must be running; the script starts a temporary MariaDB, runs `cargo test` and the frontend tests (Vitest), then cleans up.
+
+```bash
+./run-tests.sh      # Linux / macOS / Git Bash
+```
+
+```powershell
+.\run-tests.ps1     # Windows PowerShell
+```
+
+If PowerShell blocks the script: `powershell -ExecutionPolicy Bypass -File .\run-tests.ps1`
+
+The script ends with `TẤT CẢ TEST ĐỀU PASS` (all passed) or `CÓ TEST LỖI` (some failed) and returns a non-zero exit code on failure. The first run is slow because images and dependencies are downloaded.
 
 ## Environment Variables
 
@@ -124,9 +186,8 @@ The backend always listens on port 3000 inside Docker (the frontend's nginx prox
 
 | Document | Content |
 |----------|---------|
-| [Backend/README.md](Backend/README.md) | Backend structure (every folder/file), mock accounts, endpoints, env vars, tests |
+| [Backend/README.md](Backend/README.md) | What the backend does, structure, endpoints, env vars, tests |
+| [Frontend/README.md](Frontend/README.md) | What the frontend does, structure, env vars, tests |
 | [docs/API.md](docs/API.md) | API contract between frontend and backend |
-| [docs/DATABASE_SPEC.md](docs/DATABASE_SPEC.md) | Database spec and **how to replace the mock with the real MariaDB (section 7)** |
-| [docs/BACKEND_ASSUMPTIONS.md](docs/BACKEND_ASSUMPTIONS.md) | Decisions the API contract does not specify |
 | [docs/bruno/](docs/bruno/) | Bruno API test collection (128 requests) and `bruno_coverage.md` |
 | [Database/init scripts/init.sql](Database/init%20scripts/init.sql) | Tables + seed data, run automatically by MariaDB on first start |

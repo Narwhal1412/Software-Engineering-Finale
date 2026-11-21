@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Khi dev với backend thật: đặt API_TARGET (ví dụ http://localhost:3000) và VITE_USE_MOCK=false
+// Khi dev với backend thật: đặt API_TARGET (ví dụ http://localhost:3000) 
 const target = process.env.API_TARGET || 'http://localhost:3000';
 
 export default defineConfig({

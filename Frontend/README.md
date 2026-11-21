@@ -1,124 +1,81 @@
-# TECHBOX PC - FRONTEND (React + Vite)
+# Frontend – Storefront and Admin UI
 
----
+Single-page web application for the computer shop, built with React 18 and Vite. It talks to the backend only through `src/api.js`.
 
-## 1. PROJECT STRUCTURE
+## What Works
 
-- `src/main.jsx`: Application entry point.
-- `src/App.jsx`: Handles page routing using `#hash` (store or admin panel), maintains login state, and automatically logs users out when the session expires (HTTP 401).
-- `src/Shop.jsx`: Store page, including products, search, shopping cart, checkout, user accounts, and order history.
-- `src/Admin.jsx`: Admin dashboard, including statistics, products, categories, orders, and members.
-- `src/ui.jsx`: Shared UI components (dialogs, notifications, input fields, and order cards).
-- `src/api.js`: THE ONLY API CALLING LAYER + mock data. The API contract for the backend is documented at the beginning of this file.
-- `src/styles.css`: All CSS styles.
-- `src/*.test.js(x)`: Unit tests (Vitest + React Testing Library); `src/test/setup.js` contains shared test configuration.
-- `docs/API.md`: API contract (provided to the developers responsible for Routes + BLL).
-- `eslint.config.js`, `.prettierrc`, `.editorconfig`: Coding conventions and code style configuration.
+**Storefront (`/`)**
+- Product list with a live search box (debounced) and a category filter.
+- Sorting by newest, price ascending, or price descending.
+- Pinned products appear first.
+- Login and registration in a modal dialog.
+- Adding products to the cart requires login; otherwise the login dialog opens.
+- Cart dialog: change quantities, remove items, check out with name, phone, address and payment method (cash on delivery or bank transfer).
+- Order history dialog and account dialog (update display name, phone, address).
+- Toast notifications for success and error messages.
 
-## 2. RUNNING THE APPLICATION (MOCK DATA, NO BACKEND REQUIRED)
+**Admin panel (`/#/admin`)**
+- Login gate for administrator accounts.
+- **Statistics:** KPI cards, 7-day revenue chart, best-selling products, order status overview.
+- **Products:** create, edit, delete, pin/unpin, image upload.
+- **Categories:** create, rename, delete.
+- **Orders:** list all orders and change their status.
+- **Members:** list users and delete non-admin accounts.
 
-Requires Node.js 18 or later.
+**Session handling**
+- The logged-in user is kept in `localStorage`.
+- If the backend returns HTTP 401 while a token is present, the session is cleared and the user is logged out.
+
+## Layout
+
+```
+src/
+├── main.jsx        # React entry point
+├── App.jsx         # Chooses the storefront or the admin panel from the URL hash; session state
+├── Shop.jsx        # Storefront: product list, search, cart, checkout, orders, profile
+├── Admin.jsx       # Admin panel: login gate, statistics, products, categories, orders, members
+├── ui.jsx          # Shared components (Modal, Field, Toast, run() helper, formatting)
+├── api.js          # The only module that calls the backend (fetch wrapper)
+├── styles.css      # Global styles
+└── test/setup.js  # Test environment setup (jest-dom, storage, cleanup)
+```
+
+Tests sit next to their modules: `*.test.jsx` / `*.test.js`.
+
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_API_BASE` | `/api` | Base URL of the API. Leave unset to use the same origin (dev proxy or nginx). |
+| `API_TARGET` | `http://localhost:3000` | Used by `vite.config.js` to proxy `/api` and `/uploads` during development. |
+
+## Running
+
+**Docker:** the frontend is built with Vite and served by nginx by the root `compose.yaml`; see the [root README](../README.md).
+
+**Manually:** make sure the backend is running on port 3000 (see [Backend/README.md](../Backend/README.md)), then:
 
 ```bash
-npm install
+cd Frontend
+npm ci
 npm run dev
 ```
 
-Open the Vite URL displayed in the terminal (usually `http://localhost:5173`).
+Open http://localhost:5173.
 
-- Store: `/`
-- Admin panel: `/#/admin` (or click "Admin Dashboard" after logging in as an admin).
-- Demo admin account: `admin@pc.vn / 123456`
-- Regular user account: Register a new account (no activation required; account data will be lost when browser data is cleared).
-- Mock products, cart, and orders are reset when the page is reloaded; 7 sample orders are provided for viewing dashboard charts.
+Other scripts: `npm run build` (production bundle in `dist/`), `npm run preview`, `npm run lint`, `npm run format`.
 
-## 3. CODE QUALITY CHECKS
+## Tests
+
+Frontend tests (Vitest with jsdom and Testing Library) are run through the root test script, which runs them in a Node 20 container:
 
 ```bash
-npm test
-```
-Runs all unit tests.
-
-```bash
-npm run coverage
-```
-Runs tests and generates a code coverage report (in the `coverage/` directory).
-
-```bash
-npm run lint
-```
-Checks the code using ESLint.
-
-```bash
-npm run format
-```
-Formats the code using Prettier (run once before committing).
-
-**Note:** Unit tests use mock data from `src/api.js`. If the mock implementation is removed when connecting to the real backend, keep the UI tests (`ui`, `Admin`, `App`) and convert API tests to use mocked `fetch` requests.
-
-## 4. CONNECTING TO THE REAL BACKEND
-
-**a)** The backend must implement the endpoints specified in `docs/API.md`.
-
-**b)** Run the development server:
-
-```bash
-API_TARGET=http://localhost:3000 VITE_USE_MOCK=false npm run dev
+./run-tests.sh          # Linux / macOS / Git Bash
+.\run-tests.ps1         # Windows PowerShell
 ```
 
-For Windows PowerShell:
+The frontend tests use a mocked API (`vi.mock('./api.js')`), so they do not need the backend or database to be running.
 
-```powershell
-$env:API_TARGET="http://localhost:3000"; $env:VITE_USE_MOCK="false"; npm run dev
-```
+## Docker Image
 
-**c)** The frontend only calls relative paths `/api` and `/uploads`. Do not hardcode the host or port.
-
-**d)** Backend errors: When the backend returns an HTTP 4xx response with JSON `{"message": "..."}`, the frontend automatically displays the error message.
-
-**e)** Expired or invalid tokens: When the backend returns HTTP 401, the frontend automatically clears the session and prompts the user to log in again.
-
-## 5. BUILD AND DOCKER (FRONTEND IS A SEPARATE CONTAINER IN THE 3-TIER ARCHITECTURE)
-
-```bash
-npm run build
-```
-Generates the `dist` directory.
-
-```bash
-docker build -t techbox-web .
-```
-
-- The Dockerfile uses a two-stage build: Node.js builds the application into `dist`, then Nginx serves the generated files.
-- `nginx.conf` forwards `/api` and `/uploads` requests to the service named `backend` on port `3000`. Adjust this to match `docker-compose.yml`.
-- The Dockerfile uses `npm ci`, so `package-lock.json` MUST be included in the repository (generate it by running `npm install`, then commit it).
-
-**Suggested frontend CI pipeline:**
-
-```bash
-npm ci
-npm run lint
-npm test
-npm run build
-docker build -t techbox-web .
-```
-
-## 6. ARCHITECTURE RULES (3 LAYERS / 3-TIER ARCHITECTURE)
-
-- The frontend is the Presentation Layer, running in the Client Tier (browser).
-- All API calls must go through `src/api.js`. Do not access the database directly or put business logic inside components.
-- Frontend validation is only intended to provide early error feedback. The backend must validate the data again and independently enforce admin permissions.
-
-## 7. GIT
-
-- Commit small changes frequently (Git activity is continuously evaluated throughout the project).
-- `.gitignore` already excludes `node_modules`, `dist`, and `coverage`.
-- It is recommended to commit `package-lock.json` after the first `npm install`.
-
-## 8. BEFORE SUBMISSION
-
-Delete the following directories:
-
-- `node_modules`
-- `dist`
-- `coverage`
+`Frontend/Dockerfile` has two stages: `node:20-slim` builds the static files, and `nginx:alpine` serves them. `nginx.conf` proxies `/api/` and `/uploads/` to `http://backend:3000` and sends all other routes to `index.html`.

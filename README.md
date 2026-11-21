@@ -1,4 +1,4 @@
-# Computer Management Web Application
+# Computer Shop Management Software
 
 > This project was made to satisfy the final term of Software Engineering.
 
@@ -109,7 +109,7 @@ docker compose up --build
 ```
 | Service | URL |
 |---------|-----|
-| Frontend | http://localhost (cổng đổi bằng `WEB_PORT`) |
+| Frontend | http://localhost:80 (cổng đổi bằng `WEB_PORT`) |
 | Backend API | http://localhost:3000 |
 | MariaDB | 127.0.0.1:3306 (chỉ máy local) |
 

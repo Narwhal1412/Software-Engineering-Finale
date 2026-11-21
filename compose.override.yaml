@@ -5,7 +5,7 @@
 services:
   frontend:
     ports:
-      - "${WEB_PORT:-80}:80"          # Giao diện: http://localhost  (đổi bằng WEB_PORT trong .env)
+      - "80:80"          # Giao diện: http://localhost  (đổi bằng WEB_PORT trong .env)
   backend:
     ports:
       - "3000:3000"                   # Gọi API trực tiếp (Bruno dùng http://localhost:3000)

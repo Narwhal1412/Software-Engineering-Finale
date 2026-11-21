@@ -16,7 +16,12 @@ services:
     networks:
       # - default          # để nói chuyện với backend
       - komodo_default   # để Traefik thấy frontend
-
+  backend:
+   networks:
+    - komodo_default
+  db:
+   networks:
+    - komodo_default
 networks:
   komodo_default:
     external: true

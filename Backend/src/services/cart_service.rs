@@ -3,8 +3,9 @@
 use std::sync::Arc;
 
 use crate::dtos::cart_dto::{AddCartItemRequest, CartItemResponse, SetQuantityRequest};
-use crate::error::AppError;
+use crate::error::{out_of_stock_message, AppError};
 use crate::middleware::auth::AuthUser;
+use crate::models::product::Product;
 use crate::repositories::{CartRepository, ProductRepository};
 
 /// Số lượng tối đa của một dòng giỏ hàng (chặn nhập nhầm; API.md không nêu giới hạn).
@@ -36,9 +37,20 @@ impl CartService {
     ) -> Result<Vec<CartItemResponse>, AppError> {
         let quantity = request.quantity.unwrap_or(1);
         validate_quantity(quantity)?;
-        if self.products.find_by_id(request.product_id).await?.is_none() {
-            return Err(AppError::NotFound("Không tìm thấy sản phẩm".to_owned()));
-        }
+        let product = self
+            .products
+            .find_by_id(request.product_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Không tìm thấy sản phẩm".to_owned()))?;
+        // Tính cả số lượng đã có trong giỏ: tổng sau khi thêm không được vượt tồn kho.
+        let in_cart = self
+            .carts
+            .list_with_products(actor.id)
+            .await?
+            .iter()
+            .find(|line| line.product_id == product.id)
+            .map_or(0, |line| line.quantity);
+        ensure_in_stock(&product, in_cart.saturating_add(quantity))?;
 
         let item = self
             .carts
@@ -61,6 +73,10 @@ impl CartService {
         request: SetQuantityRequest,
     ) -> Result<Vec<CartItemResponse>, AppError> {
         validate_quantity(request.quantity)?;
+        // Sản phẩm không tồn tại thì để repository báo lỗi "không có trong giỏ" như trước.
+        if let Some(product) = self.products.find_by_id(product_id).await? {
+            ensure_in_stock(&product, request.quantity)?;
+        }
         self.carts
             .set_quantity(actor.id, product_id, request.quantity)
             .await?;
@@ -86,5 +102,19 @@ fn validate_quantity(quantity: i32) -> Result<(), AppError> {
         Err(AppError::BadRequest(format!(
             "Số lượng phải từ 1 đến {MAX_CART_QUANTITY}"
         )))
+    }
+}
+
+/// Số lượng muốn mua không được vượt tồn kho hiện có (409 nếu vượt).
+/// Đây chỉ là kiểm tra sớm để báo lỗi rõ ràng; việc kiểm tra và trừ kho thật
+/// được repository làm nguyên tử khi đặt hàng.
+fn ensure_in_stock(product: &Product, wanted: i32) -> Result<(), AppError> {
+    if wanted > product.stock {
+        Err(AppError::Conflict(out_of_stock_message(
+            &product.name,
+            product.stock,
+        )))
+    } else {
+        Ok(())
     }
 }

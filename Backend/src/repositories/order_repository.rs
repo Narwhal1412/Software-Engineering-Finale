@@ -12,6 +12,8 @@ pub trait OrderRepository: Send + Sync {
     /// Tạo đơn từ giỏ hàng hiện tại của `user_id` trong MỘT giao dịch nguyên tử:
     /// lấy giá và tên sản phẩm hiện hành làm snapshot, tính `total`, tạo đơn với
     /// trạng thái `pending`, rồi xóa giỏ hàng. Thất bại thì không thay đổi gì.
+    /// Đồng thời kiểm tra và TRỪ tồn kho từng sản phẩm; một sản phẩm không đủ hàng thì
+    /// cả đơn thất bại với `OutOfStock` (không trừ kho, giỏ giữ nguyên).
     /// `Constraint` nếu giỏ trống; `InvalidReference { field: "user_id" }` nếu người dùng không tồn tại.
     async fn create_from_cart(&self, user_id: i64, draft: OrderDraft) -> Result<Order, RepoError>;
 
@@ -25,6 +27,7 @@ pub trait OrderRepository: Send + Sync {
     async fn find_by_id(&self, id: i64) -> Result<Option<Order>, RepoError>;
 
     /// Đổi trạng thái đơn. `NotFound` nếu không có. Quy tắc chuyển trạng thái do service quyết định.
+    /// Khi đơn chuyển sang `cancelled` (từ trạng thái khác), tồn kho các sản phẩm trong đơn được hoàn lại.
     async fn update_status(&self, id: i64, status: OrderStatus) -> Result<Order, RepoError>;
 
     /// Tổng số đơn (gồm cả đơn đã hủy).

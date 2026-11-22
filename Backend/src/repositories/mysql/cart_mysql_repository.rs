@@ -11,7 +11,7 @@ use crate::repositories::{CartRepository, RepoError};
 
 /// Giỏ kèm sản phẩm. Tên cột không trùng nhau nên đọc được bằng `try_get`.
 const CART_LINES: &str = "SELECT ci.product_id, ci.quantity, \
-     p.id, p.name, p.specs, p.price, p.category_id, p.image_url, p.pinned_at, p.created_at \
+     p.id, p.name, p.specs, p.price, p.stock, p.category_id, p.image_url, p.pinned_at, p.created_at \
      FROM cart_items ci JOIN products p ON p.id = ci.product_id \
      WHERE ci.user_id = ? ORDER BY ci.product_id";
 

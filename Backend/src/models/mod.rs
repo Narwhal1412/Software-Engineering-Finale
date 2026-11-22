@@ -7,5 +7,6 @@ pub mod category;
 pub mod enums;
 pub mod limits;
 pub mod order;
+pub mod policy;
 pub mod product;
 pub mod user;

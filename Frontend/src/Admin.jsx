@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from './api.js';
-import { Field, Modal, OrderBox, ST, run, toast, vnd } from './ui.jsx';
+import { Field, Icon, Modal, OrderBox, ST, run, toast, vnd } from './ui.jsx';
+import { ICON_CHOICES } from './perks.js';
 
 const TABS = {
   stats: 'Thống kê',
   products: 'Sản phẩm',
   categories: 'Danh mục',
+  policies: 'Chính sách',
   orders: 'Đơn hàng',
   users: 'Thành viên'
 };
@@ -23,32 +25,37 @@ function Gate({ user, setUser }) {
     }, setMsg);
   };
   return (
-    <div className="gate">
-      <h2>Đăng nhập quản trị</h2>
-      <form onSubmit={submit}>
-        <Field
-          id="gEmail"
-          label="Email"
-          type="email"
-          required
-          value={f.email}
-          onChange={e => setF({ ...f, email: e.target.value })}
-        />
-        <Field
-          id="gPass"
-          label="Mật khẩu"
-          type="password"
-          required
-          value={f.password}
-          onChange={e => setF({ ...f, password: e.target.value })}
-        />
-        <p className="err" role="alert">
-          {msg || (user ? 'Tài khoản này không có quyền quản trị.' : '')}
-        </p>
-        <div className="row">
-          <button className="btn main">Đăng nhập</button>
+    <div className="gate-wrap">
+      <div className="gate">
+        <div className="fb" aria-hidden="true">
+          Tech<b>Box</b>
         </div>
-      </form>
+        <h2>Đăng nhập quản trị</h2>
+        <form onSubmit={submit}>
+          <Field
+            id="gEmail"
+            label="Email"
+            type="email"
+            required
+            value={f.email}
+            onChange={e => setF({ ...f, email: e.target.value })}
+          />
+          <Field
+            id="gPass"
+            label="Mật khẩu"
+            type="password"
+            required
+            value={f.password}
+            onChange={e => setF({ ...f, password: e.target.value })}
+          />
+          <p className="err" role="alert">
+            {msg || (user ? 'Tài khoản này không có quyền quản trị.' : '')}
+          </p>
+          <div className="row">
+            <button className="btn main">Đăng nhập</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -171,6 +178,7 @@ function ProductForm({ p, cats, onClose, onSaved }) {
     name: p.name || '',
     specs: p.specs || '',
     price: p.price ?? '',
+    stock: p.stock ?? 0,
     categoryId: p.categoryId ?? ''
   });
   const [img, setImg] = useState(p.imageUrl || null);
@@ -188,6 +196,7 @@ function ProductForm({ p, cats, onClose, onSaved }) {
       name: f.name.trim(),
       specs: f.specs.trim(),
       price: +f.price,
+      stock: +f.stock,
       categoryId: f.categoryId ? +f.categoryId : null,
       imageUrl: img
     };
@@ -211,6 +220,16 @@ function ProductForm({ p, cats, onClose, onSaved }) {
           required
           value={f.price}
           onChange={set('price')}
+        />
+        <Field
+          id="pStock"
+          label="Số lượng tồn kho"
+          type="number"
+          min="0"
+          step="1"
+          required
+          value={f.stock}
+          onChange={set('stock')}
         />
         <label htmlFor="pCat">Danh mục</label>
         <select id="pCat" value={f.categoryId} onChange={set('categoryId')}>
@@ -306,13 +325,14 @@ function Products({ ask }) {
               <th>Sản phẩm</th>
               <th>Danh mục</th>
               <th>Giá</th>
+              <th>Tồn kho</th>
               <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan="5">
+                <td colSpan="6">
                   <div className="empty">Không có sản phẩm phù hợp.</div>
                 </td>
               </tr>
@@ -335,6 +355,7 @@ function Products({ ask }) {
                 </td>
                 <td>{catName(p.categoryId)}</td>
                 <td>{vnd(p.price)}</td>
+                <td>{p.stock}</td>
                 <td>
                   <div className="acts">
                     <button className="btn" onClick={() => setEdit(p)}>
@@ -459,6 +480,202 @@ function Categories({ ask }) {
   );
 }
 
+function PolicyForm({ p, cats, onClose, onSaved }) {
+  const [f, setF] = useState({
+    icon: p.icon || 'shield',
+    title: p.title || '',
+    content: p.content || '',
+    categoryId: p.categoryId ?? '',
+    sortOrder: p.sortOrder ?? 10
+  });
+  const [err, setErr] = useState('');
+  const set = k => e => setF({ ...f, [k]: e.target.value });
+  const save = e => {
+    e.preventDefault();
+    const b = {
+      icon: f.icon,
+      title: f.title.trim(),
+      content: f.content.trim(),
+      categoryId: f.categoryId ? +f.categoryId : null,
+      sortOrder: +f.sortOrder
+    };
+    run(async () => {
+      p.id ? await api.updatePolicy(p.id, b) : await api.createPolicy(b);
+      onSaved();
+      toast('Đã lưu chính sách');
+    }, setErr);
+  };
+  return (
+    <Modal title={p.id ? 'Sửa chính sách' : 'Thêm chính sách'} onClose={onClose}>
+      <form onSubmit={save}>
+        <Field
+          id="pcTitle"
+          label="Tiêu đề"
+          required
+          maxLength={150}
+          placeholder="Ví dụ: Bảo hành chính hãng 36 tháng"
+          value={f.title}
+          onChange={set('title')}
+        />
+        <label htmlFor="pcContent">Nội dung</label>
+        <textarea id="pcContent" required maxLength={500} rows={3} value={f.content} onChange={set('content')} />
+        <label htmlFor="pcIcon">Biểu tượng</label>
+        <div className="icon-pick">
+          <span className="perk-ic">
+            <Icon name={f.icon} size={20} />
+          </span>
+          <select id="pcIcon" value={f.icon} onChange={set('icon')}>
+            {ICON_CHOICES.map(c => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <label htmlFor="pcCat">Áp dụng cho</label>
+        <select id="pcCat" value={f.categoryId} onChange={set('categoryId')}>
+          <option value="">Tất cả sản phẩm</option>
+          {cats.map(c => (
+            <option key={c.id} value={c.id}>
+              Danh mục: {c.name}
+            </option>
+          ))}
+        </select>
+        <Field
+          id="pcOrder"
+          label="Thứ tự hiển thị (số nhỏ hiện trước)"
+          type="number"
+          min="0"
+          max="9999"
+          step="1"
+          required
+          value={f.sortOrder}
+          onChange={set('sortOrder')}
+        />
+        <p className="err" role="alert">
+          {err}
+        </p>
+        <div className="row">
+          <button type="button" className="btn" onClick={onClose}>
+            Hủy
+          </button>
+          <button className="btn main">Lưu chính sách</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function Policies({ ask }) {
+  const [cats, setCats] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [scope, setScope] = useState(''); // '': tất cả; 'common': chính sách chung; còn lại: id danh mục
+  const [edit, setEdit] = useState(null); // null: đóng form; {}: thêm mới; policy: sửa
+  useEffect(() => {
+    run(async () => setCats(await api.categories()));
+  }, []);
+  const load = useCallback(() => run(async () => setRows(await api.policies())), []);
+  useEffect(() => {
+    load();
+  }, [load]);
+  const catName = id => (cats.find(c => c.id === id) || {}).name || 'Chưa phân loại';
+  const shown = rows.filter(
+    p => scope === '' || (scope === 'common' ? p.categoryId == null : String(p.categoryId) === scope)
+  );
+  return (
+    <>
+      <div className="tools">
+        <h1>Chính sách và ưu đãi</h1>
+        <button className="btn main" onClick={() => setEdit({})}>
+          Thêm chính sách
+        </button>
+      </div>
+      <div className="tools">
+        <select aria-label="Lọc chính sách" value={scope} onChange={e => setScope(e.target.value)}>
+          <option value="">Tất cả chính sách</option>
+          <option value="common">Chỉ chính sách chung</option>
+          {cats.map(c => (
+            <option key={c.id} value={c.id}>
+              Danh mục: {c.name}
+            </option>
+          ))}
+        </select>
+        <span className="tag">Chính sách hiển thị trong hộp chi tiết sản phẩm của cửa hàng.</span>
+      </div>
+      <div className="tw">
+        <table>
+          <thead>
+            <tr>
+              <th>Thứ tự</th>
+              <th>Chính sách</th>
+              <th>Áp dụng cho</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.length === 0 && (
+              <tr>
+                <td colSpan="4">
+                  <div className="empty">Chưa có chính sách nào.</div>
+                </td>
+              </tr>
+            )}
+            {shown.map(p => (
+              <tr key={p.id}>
+                <td>{p.sortOrder}</td>
+                <td>
+                  <div className="pol-cell">
+                    <span className="perk-ic">
+                      <Icon name={p.icon} size={18} />
+                    </span>
+                    <div>
+                      <strong>{p.title}</strong>
+                      <br />
+                      <span className="tag">{p.content}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>{p.categoryId == null ? 'Tất cả sản phẩm' : catName(p.categoryId)}</td>
+                <td>
+                  <div className="acts">
+                    <button className="btn" aria-label={'Sửa chính sách ' + p.title} onClick={() => setEdit(p)}>
+                      Sửa
+                    </button>
+                    <button
+                      className="btn bad"
+                      aria-label={'Xóa chính sách ' + p.title}
+                      onClick={() =>
+                        ask('Xóa chính sách "' + p.title + '"? Không thể hoàn tác.', async () => {
+                          await api.deletePolicy(p.id);
+                          await load();
+                          toast('Đã xóa chính sách');
+                        })
+                      }
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {edit && (
+        <PolicyForm
+          p={edit}
+          cats={cats}
+          onClose={() => setEdit(null)}
+          onSaved={() => {
+            setEdit(null);
+            load();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
 function Orders() {
   const [list, setList] = useState([]);
   useEffect(() => {
@@ -574,6 +791,7 @@ export default function Admin({ user, setUser, hash }) {
             {tab === 'stats' && <Stats />}
             {tab === 'products' && <Products ask={ask} />}
             {tab === 'categories' && <Categories ask={ask} />}
+            {tab === 'policies' && <Policies ask={ask} />}
             {tab === 'orders' && <Orders />}
             {tab === 'users' && <Users ask={ask} />}
           </section>

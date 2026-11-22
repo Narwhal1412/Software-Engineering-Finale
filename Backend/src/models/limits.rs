@@ -17,3 +17,9 @@ pub const PRODUCT_NAME_MAX_LEN: usize = 200;
 pub const IMAGE_URL_MAX_LEN: usize = 512;
 /// Độ dài tối đa của họ tên người nhận (`orders.full_name`).
 pub const FULL_NAME_MAX_LEN: usize = 100;
+/// Độ dài tối đa của tên biểu tượng chính sách (`policies.icon`).
+pub const POLICY_ICON_MAX_LEN: usize = 30;
+/// Độ dài tối đa của tiêu đề chính sách (`policies.title`).
+pub const POLICY_TITLE_MAX_LEN: usize = 150;
+/// Độ dài tối đa của nội dung chính sách (`policies.content`).
+pub const POLICY_CONTENT_MAX_LEN: usize = 500;

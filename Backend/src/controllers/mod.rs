@@ -6,6 +6,7 @@ pub mod auth_controller;
 pub mod cart_controller;
 pub mod category_controller;
 pub mod order_controller;
+pub mod policy_controller;
 pub mod product_controller;
 pub mod stats_controller;
 pub mod upload_controller;
@@ -23,6 +24,7 @@ pub fn build_router() -> Router<AppState> {
         .merge(auth_controller::router())
         .merge(user_controller::router())
         .merge(category_controller::router())
+        .merge(policy_controller::router())
         .merge(product_controller::router())
         .merge(upload_controller::router())
         .merge(cart_controller::router())

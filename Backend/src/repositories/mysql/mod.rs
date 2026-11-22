@@ -7,11 +7,13 @@ mod cart_mysql_repository;
 mod category_mysql_repository;
 mod error;
 mod order_mysql_repository;
+mod policy_mysql_repository;
 mod product_mysql_repository;
 mod user_mysql_repository;
 
 pub use cart_mysql_repository::MySqlCartRepository;
 pub use category_mysql_repository::MySqlCategoryRepository;
 pub use order_mysql_repository::MySqlOrderRepository;
+pub use policy_mysql_repository::MySqlPolicyRepository;
 pub use product_mysql_repository::MySqlProductRepository;
 pub use user_mysql_repository::MySqlUserRepository;

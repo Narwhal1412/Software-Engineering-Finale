@@ -11,7 +11,7 @@ use crate::repositories::{ProductRepository, RepoError};
 
 /// Danh sách cột của `products`, đúng thứ tự mục 2.3.
 const PRODUCT_COLUMNS: &str =
-    "id, name, specs, price, category_id, image_url, pinned_at, created_at";
+    "id, name, specs, price, stock, category_id, image_url, pinned_at, created_at";
 
 /// Đọc một dòng `products` (các cột có tên đúng như trong bảng).
 /// `pub(super)` để `cart_mysql_repository` dùng lại khi đọc sản phẩm trong giỏ.
@@ -21,6 +21,7 @@ pub(super) fn product_from_row(row: &MySqlRow) -> Result<Product, RepoError> {
         name: row.try_get("name").map_err(map_sqlx_error)?,
         specs: row.try_get("specs").map_err(map_sqlx_error)?,
         price: row.try_get("price").map_err(map_sqlx_error)?,
+        stock: row.try_get("stock").map_err(map_sqlx_error)?,
         category_id: row.try_get("category_id").map_err(map_sqlx_error)?,
         image_url: row.try_get("image_url").map_err(map_sqlx_error)?,
         pinned_at: read_opt_utc(row, "pinned_at")?,
@@ -109,12 +110,13 @@ impl ProductRepository for MySqlProductRepository {
 
     async fn create(&self, input: ProductInput) -> Result<Product, RepoError> {
         let result = sqlx::query(
-            "INSERT INTO products (name, specs, price, category_id, image_url, pinned_at, created_at) \
-             VALUES (?, ?, ?, ?, ?, NULL, UTC_TIMESTAMP(6))",
+            "INSERT INTO products (name, specs, price, stock, category_id, image_url, pinned_at, created_at) \
+             VALUES (?, ?, ?, ?, ?, ?, NULL, UTC_TIMESTAMP(6))",
         )
         .bind(input.name)
         .bind(input.specs)
         .bind(input.price)
+        .bind(input.stock)
         .bind(input.category_id)
         .bind(input.image_url)
         .execute(&self.pool)
@@ -129,12 +131,13 @@ impl ProductRepository for MySqlProductRepository {
 
     async fn update(&self, id: i64, input: ProductInput) -> Result<Product, RepoError> {
         sqlx::query(
-            "UPDATE products SET name = ?, specs = ?, price = ?, category_id = ?, image_url = ? \
+            "UPDATE products SET name = ?, specs = ?, price = ?, stock = ?, category_id = ?, image_url = ? \
              WHERE id = ?",
         )
         .bind(input.name)
         .bind(input.specs)
         .bind(input.price)
+        .bind(input.stock)
         .bind(input.category_id)
         .bind(input.image_url)
         .bind(id)

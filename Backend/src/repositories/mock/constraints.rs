@@ -22,6 +22,15 @@ pub(super) fn check_price(price: i64) -> Result<(), RepoError> {
     }
 }
 
+/// Mô phỏng `CHECK (stock >= 0)`.
+pub(super) fn check_stock(stock: i32) -> Result<(), RepoError> {
+    if stock < 0 {
+        Err(RepoError::Constraint("stock must be >= 0".to_owned()))
+    } else {
+        Ok(())
+    }
+}
+
 /// Mô phỏng `CHECK (quantity >= 1)`.
 pub(super) fn check_quantity(quantity: i32) -> Result<(), RepoError> {
     if quantity < 1 {

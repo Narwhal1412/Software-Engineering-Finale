@@ -21,15 +21,16 @@ use computer_shop_backend::db;
 use computer_shop_backend::middleware::password::verify_password;
 use computer_shop_backend::models::enums::{OrderStatus, PaymentMethod, Role};
 use computer_shop_backend::models::order::{Order, OrderDraft};
+use computer_shop_backend::models::policy::PolicyInput;
 use computer_shop_backend::models::product::{Product, ProductInput, ProductQuery, ProductSort};
 use computer_shop_backend::models::user::{NewUser, ProfileUpdate, User};
 use computer_shop_backend::repositories::mysql::{
-    MySqlCartRepository, MySqlCategoryRepository, MySqlOrderRepository, MySqlProductRepository,
-    MySqlUserRepository,
+    MySqlCartRepository, MySqlCategoryRepository, MySqlOrderRepository, MySqlPolicyRepository,
+    MySqlProductRepository, MySqlUserRepository,
 };
 use computer_shop_backend::repositories::{
-    CartRepository, CategoryRepository, OrderRepository, ProductRepository, RepoError,
-    UserRepository,
+    CartRepository, CategoryRepository, OrderRepository, PolicyRepository, ProductRepository,
+    RepoError, UserRepository,
 };
 
 type TestResult = Result<(), RepoError>;
@@ -47,6 +48,7 @@ struct Repos {
     products: MySqlProductRepository,
     carts: MySqlCartRepository,
     orders: MySqlOrderRepository,
+    policies: MySqlPolicyRepository,
 }
 
 /// Kết nối theo biến môi trường DB_* (hoặc file `.env`) và dựng 5 repository.
@@ -61,7 +63,8 @@ async fn repos() -> Repos {
         categories: MySqlCategoryRepository::new(pool.clone()),
         products: MySqlProductRepository::new(pool.clone()),
         carts: MySqlCartRepository::new(pool.clone()),
-        orders: MySqlOrderRepository::new(pool),
+        orders: MySqlOrderRepository::new(pool.clone()),
+        policies: MySqlPolicyRepository::new(pool),
     }
 }
 
@@ -93,6 +96,7 @@ fn product_input(name: &str, price: i64, category_id: Option<i64>) -> ProductInp
         name: name.to_owned(),
         specs: "thông số thử".to_owned(),
         price,
+        stock: 100,
         category_id,
         image_url: None,
     }
@@ -347,6 +351,16 @@ async fn user_delete_unknown_id_is_not_found() {
     assert!(matches!(err, RepoError::NotFound { entity: "user" }));
 }
 
+fn policy_input(title: &str, category_id: Option<i64>, sort_order: i32) -> PolicyInput {
+    PolicyInput {
+        icon: "shield".to_owned(),
+        title: title.to_owned(),
+        content: "nội dung thử".to_owned(),
+        category_id,
+        sort_order,
+    }
+}
+
 // ----------------------------------------------------------------------------
 // CategoryRepository
 // ----------------------------------------------------------------------------
@@ -466,6 +480,7 @@ async fn product_create_find_and_update_round_trip() -> TestResult {
             name: name.clone(),
             specs: "8 nhân".to_owned(),
             price: 9_490_000,
+            stock: 7,
             category_id: Some(category.id),
             image_url: Some("https://example.com/a.jpg".to_owned()),
         })
@@ -656,6 +671,7 @@ async fn product_search_matches_name_and_specs_and_filters_by_category() -> Test
             name: "ten khong lien quan".to_owned(),
             specs: format!("co tu khoa {tag} o thong so"),
             price: 20,
+            stock: 1,
             category_id: None,
             image_url: None,
         })
@@ -1098,5 +1114,123 @@ async fn order_count_and_revenue_track_new_and_cancelled_orders() -> TestResult 
         repos.orders.revenue_excluding_cancelled().await?,
         revenue_before
     );
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "cần MariaDB"]
+async fn order_decrements_stock_rejects_oversell_and_cancel_restores_stock() -> TestResult {
+    let repos = repos().await;
+    let user = make_user(&repos).await?;
+    let product = repos
+        .products
+        .create(ProductInput {
+            stock: 5,
+            ..product_input(&unique("ton-kho"), 1_000, None)
+        })
+        .await?;
+
+    // Vượt kho: đơn thất bại, kho và giỏ không đổi.
+    repos.carts.add_item(user.id, product.id, 6).await?;
+    let err = repos
+        .orders
+        .create_from_cart(user.id, draft(PaymentMethod::Cod))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, RepoError::OutOfStock { available: 5, .. }));
+    assert_eq!(repos.products.find_by_id(product.id).await?.map(|p| p.stock), Some(5));
+    assert_eq!(repos.carts.list_with_products(user.id).await?.len(), 1);
+
+    // Đủ hàng: trừ kho; hủy đơn: hoàn kho đúng một lần.
+    repos.carts.set_quantity(user.id, product.id, 4).await?;
+    let order = repos
+        .orders
+        .create_from_cart(user.id, draft(PaymentMethod::Cod))
+        .await?;
+    assert_eq!(repos.products.find_by_id(product.id).await?.map(|p| p.stock), Some(1));
+    repos.orders.update_status(order.id, OrderStatus::Cancelled).await?;
+    assert_eq!(repos.products.find_by_id(product.id).await?.map(|p| p.stock), Some(5));
+    repos.orders.update_status(order.id, OrderStatus::Cancelled).await?;
+    assert_eq!(repos.products.find_by_id(product.id).await?.map(|p| p.stock), Some(5));
+    Ok(())
+}
+
+// ----------------------------------------------------------------------------
+// PolicyRepository
+// ----------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore = "cần MariaDB"]
+async fn policy_create_update_list_and_delete() -> TestResult {
+    let repos = repos().await;
+    let category = repos.categories.create(&unique("c")).await?;
+    let title = unique("cs");
+
+    let created = repos
+        .policies
+        .create(policy_input(&title, Some(category.id), 5))
+        .await?;
+    assert_eq!(created.title, title);
+    assert_eq!(created.category_id, Some(category.id));
+
+    let updated = repos
+        .policies
+        .update(created.id, policy_input("moi", None, 6))
+        .await?;
+    assert_eq!(updated.id, created.id);
+    assert_eq!(updated.title, "moi");
+    assert_eq!(updated.category_id, None);
+    assert_eq!(updated.sort_order, 6);
+
+    let all = repos.policies.list().await?;
+    assert!(all.iter().any(|policy| policy.id == created.id));
+    assert!(all
+        .windows(2)
+        .all(|pair| (pair[0].sort_order, pair[0].id) <= (pair[1].sort_order, pair[1].id)));
+
+    let err = repos
+        .policies
+        .create(policy_input("x", Some(MISSING_ID), 0))
+        .await
+        .unwrap_err();
+    assert!(matches!(
+        err,
+        RepoError::InvalidReference {
+            field: "category_id"
+        }
+    ));
+    let err = repos
+        .policies
+        .update(MISSING_ID, policy_input("x", None, 0))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, RepoError::NotFound { entity: "policy" }));
+
+    repos.policies.delete(created.id).await?;
+    let err = repos.policies.delete(created.id).await.unwrap_err();
+    assert!(matches!(err, RepoError::NotFound { entity: "policy" }));
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "cần MariaDB"]
+async fn deleting_a_category_deletes_its_own_policies_only() -> TestResult {
+    let repos = repos().await;
+    let category = repos.categories.create(&unique("c")).await?;
+    let own = repos
+        .policies
+        .create(policy_input("riêng", Some(category.id), 1))
+        .await?;
+    let shared = repos
+        .policies
+        .create(policy_input("chung", None, 1))
+        .await?;
+
+    repos.categories.delete(category.id).await?;
+
+    let all = repos.policies.list().await?;
+    assert!(!all.iter().any(|policy| policy.id == own.id));
+    assert!(all.iter().any(|policy| policy.id == shared.id));
+    repos.policies.delete(shared.id).await?;
     Ok(())
 }

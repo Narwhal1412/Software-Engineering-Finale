@@ -100,6 +100,10 @@ impl CategoryRepository for InMemoryCategoryRepository {
                 product.category_id = None;
             }
         }
+        // ON DELETE CASCADE: chính sách riêng của danh mục bị xóa theo.
+        tables
+            .policies
+            .retain(|_, policy| policy.category_id != Some(id));
         Ok(())
     }
 }

@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 use async_trait::async_trait;
 use chrono::Utc;
 
-use super::constraints::{check_len, check_price};
+use super::constraints::{check_len, check_price, check_stock};
 use super::store::{to_count, MockStore, Tables};
 use crate::models::limits::{IMAGE_URL_MAX_LEN, PRODUCT_NAME_MAX_LEN};
 use crate::models::product::{Product, ProductInput, ProductQuery, ProductSort};
@@ -27,6 +27,7 @@ impl InMemoryProductRepository {
 fn validate_input(input: &ProductInput) -> Result<(), RepoError> {
     check_len("name", &input.name, PRODUCT_NAME_MAX_LEN)?;
     check_price(input.price)?;
+    check_stock(input.stock)?;
     if let Some(url) = &input.image_url {
         check_len("image_url", url, IMAGE_URL_MAX_LEN)?;
     }
@@ -109,6 +110,7 @@ impl ProductRepository for InMemoryProductRepository {
             name: input.name,
             specs: input.specs,
             price: input.price,
+            stock: input.stock,
             category_id: input.category_id,
             image_url: input.image_url,
             pinned_at: None,
@@ -132,6 +134,7 @@ impl ProductRepository for InMemoryProductRepository {
         product.name = input.name;
         product.specs = input.specs;
         product.price = input.price;
+        product.stock = input.stock;
         product.category_id = input.category_id;
         product.image_url = input.image_url;
         Ok(product.clone())

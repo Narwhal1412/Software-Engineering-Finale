@@ -32,6 +32,14 @@ pub enum RepoError {
         /// Entity đang tham chiếu tới nó.
         referenced_by: &'static str,
     },
+    /// Số lượng yêu cầu vượt quá tồn kho của sản phẩm.
+    #[error("{product} is out of stock (available: {available})")]
+    OutOfStock {
+        /// Tên sản phẩm (dùng cho thông báo).
+        product: String,
+        /// Số lượng còn trong kho tại thời điểm kiểm tra.
+        available: i32,
+    },
     /// Vi phạm ràng buộc CHECK / NOT NULL / độ dài cột.
     #[error("constraint violated: {0}")]
     Constraint(String),

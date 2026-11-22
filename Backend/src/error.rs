@@ -96,11 +96,23 @@ impl From<RepoError> for AppError {
                 entity,
                 referenced_by,
             } => Self::Conflict(in_use_message(entity, referenced_by).to_owned()),
+            RepoError::OutOfStock { product, available } => {
+                Self::Conflict(out_of_stock_message(&product, available))
+            }
             RepoError::Constraint(detail) => {
                 Self::BadRequest(format!("Dữ liệu không hợp lệ: {detail}"))
             }
             RepoError::Internal(detail) => Self::Internal(detail),
         }
+    }
+}
+
+/// Thông báo khi số lượng đặt vượt quá tồn kho (dùng chung cho giỏ hàng và đặt hàng).
+pub(crate) fn out_of_stock_message(product: &str, available: i32) -> String {
+    if available <= 0 {
+        format!("Sản phẩm \"{product}\" đã hết hàng")
+    } else {
+        format!("Sản phẩm \"{product}\" chỉ còn {available} trong kho")
     }
 }
 
@@ -111,6 +123,7 @@ fn entity_label(entity: &str) -> &str {
         "product" => "sản phẩm",
         "category" => "danh mục",
         "order" => "đơn hàng",
+        "policy" => "chính sách",
         "cart item" => "sản phẩm trong giỏ hàng",
         other => other,
     }

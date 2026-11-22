@@ -17,6 +17,12 @@
 This repository is dedicated towards using Open Source Softwares to create the program,as well as document any hurdles along the way.
 
 **Key Features**
+- Storefront: live search, category filter, sorting, pinned products, shopping cart and checkout (cash on delivery or bank transfer)
+- **Product detail dialog:** click a product to see its specs, stock and the shop's policies and offers (warranty, returns, delivery... as set by the admin, per category or for all products)
+- Customer accounts: register, log in, edit profile, order history, cancel a `pending` order
+- Admin panel (`/#/admin`): statistics, products (image upload, pin, stock), categories, **policies and offers**, orders, members
+- Stock control: every product has a stock quantity; carts and orders cannot exceed it, and ordering subtracts it (cancelling returns it)
+- Simple inline SVG icons instead of emoji
 - Can be self-hosted by the user
 - Open Source
 - Frontend/Backend is containerized for ease of deployment
@@ -56,8 +62,8 @@ flowchart LR
 
 | Tier | Layer(s) | Technology | Details |
 |------|----------|------------|---------|
-| Presentation | Presentation | ... | [Frontend/README.md](Frontend/README.md) |
-| Application | Business Logic, Data Access | ... | [Backend/README.md](Backend/README.md) |
+| Presentation | Presentation | React 18, Vite, nginx | [Frontend/README.md](Frontend/README.md) |
+| Application | Business Logic, Data Access | Rust, axum, sqlx | [Backend/README.md](Backend/README.md) |
 | Data | none (data store) | MariaDB | defined in `compose.yaml` |
 
 ## Repository Structure
@@ -73,13 +79,13 @@ flowchart LR
 │   ├── Dockerfile
 │   └── README.md
 ├── Frontend/                 # Web UI (React + Vite)
-│   ├── src/                  #   Shop, Admin, App, api.js, ui.jsx, styles.css and their tests
+│   ├── src/                  #   Shop, Admin, App, api.js, ui.jsx (shared UI + icons), perks.js (policy icons and filtering), styles.css and their tests
 │   ├── Dockerfile
 │   ├── nginx.conf
 │   ├── package.json
 │   └── README.md
 ├── Database/
-│   └── init scripts/         # init.sql: tables + seed data
+│   ├── init scripts/         # init.sql: tables + seed data
 ├── docs/
 │   ├── API.md                #   API contract between frontend and backend
 │   ├── Requirements.txt      #   Team plan and requirements notes
@@ -113,9 +119,11 @@ docker compose up --build
 | Backend API | http://localhost:3000 |
 | MariaDB | 127.0.0.1:3306 (chỉ máy local) |
 
-> Hiện backend chạy bằng **database giả (mock in-memory)**; MariaDB chạy cạnh để kiểm tra `init.sql`. Tài khoản demo (mật khẩu `123456`): `admin@pc.vn`, `khach1@pc.vn`, `khach2@pc.vn`, `khach3@pc.vn`. Xem [Backend/README.md](Backend/README.md).
+> Backend lưu dữ liệu trong **MariaDB** (bản mock in-memory chỉ dùng cho test). Dữ liệu mẫu nạp từ `init.sql` ở lần chạy đầu tiên, mỗi sản phẩm mẫu đã có sẵn tồn kho (`stock`). Tài khoản demo (mật khẩu `123456`): `admin@pc.vn`, `khach1@pc.vn`, `khach2@pc.vn`, `khach3@pc.vn`. Xem [Backend/README.md](Backend/README.md).
 
 Stop everything with `docker compose down`.
+
+> **Upgrading from a version without stock control:** `init.sql` now creates `products.stock` but only runs on an empty database. Run `docker compose down -v` first (this deletes the old data), or follow the `ALTER TABLE` steps in [Backend/README.md](Backend/README.md#database-note-upgrading-an-existing-database).
 
 ## Manual Setup
 

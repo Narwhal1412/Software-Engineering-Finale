@@ -9,6 +9,7 @@ use crate::dtos::auth_dto::{LoginRequest, RegisterRequest};
 use crate::dtos::cart_dto::{AddCartItemRequest, SetQuantityRequest};
 use crate::dtos::category_dto::CategoryRequest;
 use crate::dtos::order_dto::{CreateOrderRequest, UpdateOrderStatusRequest};
+use crate::dtos::policy_dto::PolicyRequest;
 use crate::dtos::product_dto::{ProductQueryParams, ProductRequest};
 use crate::dtos::user_dto::UpdateProfileRequest;
 use crate::error::AppError;
@@ -18,7 +19,7 @@ use crate::models::product::ProductInput;
 use crate::models::user::NewUser;
 use crate::repositories::mock::{
     InMemoryCartRepository, InMemoryCategoryRepository, InMemoryOrderRepository,
-    InMemoryProductRepository, InMemoryUserRepository, MockStore,
+    InMemoryPolicyRepository, InMemoryProductRepository, InMemoryUserRepository, MockStore,
 };
 
 /// Dựng repository mock rỗng và service trên đó.
@@ -29,7 +30,8 @@ fn fixture() -> (Repositories, Services) {
         categories: Arc::new(InMemoryCategoryRepository::new(store.clone())),
         products: Arc::new(InMemoryProductRepository::new(store.clone())),
         carts: Arc::new(InMemoryCartRepository::new(store.clone())),
-        orders: Arc::new(InMemoryOrderRepository::new(store)),
+        orders: Arc::new(InMemoryOrderRepository::new(store.clone())),
+        policies: Arc::new(InMemoryPolicyRepository::new(store)),
     };
     let config = Config {
         port: 0,
@@ -76,6 +78,7 @@ async fn make_product(repos: &Repositories, name: &str, price: i64) -> i64 {
             name: name.to_owned(),
             specs: "specs".to_owned(),
             price,
+            stock: 1000,
             category_id: None,
             image_url: None,
         })
@@ -98,6 +101,7 @@ fn product_request(name: &str, price: i64) -> ProductRequest {
         name: name.to_owned(),
         specs: String::new(),
         price,
+        stock: 10,
         category_id: None,
         image_url: None,
     }
@@ -261,6 +265,81 @@ async fn category_rules() {
 
     services.categories.delete(admin, created.id).await.expect("xóa");
     assert!(services.categories.list().await.expect("list").is_empty());
+}
+
+// ---------- PolicyService ----------
+
+#[tokio::test]
+async fn policy_rules() {
+    let (repos, services) = fixture();
+    let admin = make_user(&repos, "admin@x.vn", Role::Admin).await;
+    let customer = make_user(&repos, "c@x.vn", Role::User).await;
+    let request = |icon: &str, title: &str| PolicyRequest {
+        icon: icon.to_owned(),
+        title: title.to_owned(),
+        content: "nội dung".to_owned(),
+        category_id: None,
+        sort_order: 1,
+    };
+
+    // Chỉ admin được ghi.
+    let err = services
+        .policies
+        .create(customer, request("shield", "Bảo hành"))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, AppError::Forbidden(_)));
+
+    // Validate đầu vào.
+    let err = services
+        .policies
+        .create(admin, request("khong-co", "Bảo hành"))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, AppError::BadRequest(_)));
+    let err = services
+        .policies
+        .create(admin, request("shield", "   "))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, AppError::BadRequest(_)));
+    let mut bad_order = request("shield", "X");
+    bad_order.sort_order = -1;
+    let err = services.policies.create(admin, bad_order).await.unwrap_err();
+    assert!(matches!(err, AppError::BadRequest(_)));
+    let mut bad_category = request("shield", "X");
+    bad_category.category_id = Some(999);
+    let err = services.policies.create(admin, bad_category).await.unwrap_err();
+    assert!(matches!(err, AppError::BadRequest(_)));
+
+    // Tạo (cắt khoảng trắng), sửa, xem công khai.
+    let created = services
+        .policies
+        .create(admin, request("shield", " Bảo hành "))
+        .await
+        .expect("tạo");
+    assert_eq!(created.title, "Bảo hành");
+    let err = services
+        .policies
+        .update(admin, 999, request("truck", "Giao hàng"))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, AppError::NotFound(_)));
+    let updated = services
+        .policies
+        .update(admin, created.id, request("truck", "Giao hàng"))
+        .await
+        .expect("sửa");
+    assert_eq!(updated.icon, "truck");
+    let list = services.policies.list().await.expect("list");
+    assert_eq!(list.len(), 1);
+    assert_eq!(list[0].title, "Giao hàng");
+
+    // Xóa.
+    let err = services.policies.delete(customer, created.id).await.unwrap_err();
+    assert!(matches!(err, AppError::Forbidden(_)));
+    services.policies.delete(admin, created.id).await.expect("xóa");
+    assert!(services.policies.list().await.expect("list").is_empty());
 }
 
 // ---------- ProductService ----------
@@ -544,4 +623,170 @@ async fn upload_validates_permission_size_and_format() {
 
     let saved = services.uploads.save_image(admin, &png).await.expect("lưu ảnh");
     assert!(saved.url.starts_with("/uploads/") && saved.url.ends_with(".png"));
+}
+
+// ---------- Giới hạn theo tồn kho ----------
+
+async fn make_product_with_stock(repos: &Repositories, name: &str, price: i64, stock: i32) -> i64 {
+    repos
+        .products
+        .create(ProductInput {
+            name: name.to_owned(),
+            specs: "specs".to_owned(),
+            price,
+            stock,
+            category_id: None,
+            image_url: None,
+        })
+        .await
+        .expect("tạo sản phẩm test")
+        .id
+}
+
+async fn stock_of(repos: &Repositories, product: i64) -> i32 {
+    repos
+        .products
+        .find_by_id(product)
+        .await
+        .expect("đọc sản phẩm")
+        .expect("sản phẩm tồn tại")
+        .stock
+}
+
+#[tokio::test]
+async fn cart_rejects_quantity_above_stock() {
+    let (repos, services) = fixture();
+    let user = make_user(&repos, "c@x.vn", Role::User).await;
+    let product = make_product_with_stock(&repos, "GPU", 100, 3).await;
+
+    let err = services.carts.add_item(user, add_request(product, Some(4))).await.unwrap_err();
+    assert!(matches!(err, AppError::Conflict(_)), "thêm vượt kho bị từ chối");
+
+    services.carts.add_item(user, add_request(product, Some(2))).await.expect("thêm 2");
+    let err = services.carts.add_item(user, add_request(product, Some(2))).await.unwrap_err();
+    assert!(matches!(err, AppError::Conflict(_)), "cộng dồn vượt kho bị từ chối");
+    let err = services
+        .carts
+        .set_quantity(user, product, SetQuantityRequest { quantity: 4 })
+        .await
+        .unwrap_err();
+    assert!(matches!(err, AppError::Conflict(_)), "đặt số lượng vượt kho bị từ chối");
+
+    let cart = services
+        .carts
+        .set_quantity(user, product, SetQuantityRequest { quantity: 3 })
+        .await
+        .expect("đúng bằng tồn kho thì được");
+    assert_eq!(cart[0].quantity, 3);
+}
+
+#[tokio::test]
+async fn cart_rejects_out_of_stock_product() {
+    let (repos, services) = fixture();
+    let user = make_user(&repos, "c@x.vn", Role::User).await;
+    let product = make_product_with_stock(&repos, "GPU", 100, 0).await;
+
+    let err = services.carts.add_item(user, add_request(product, None)).await.unwrap_err();
+    assert!(matches!(err, AppError::Conflict(_)));
+    assert!(services.carts.get(user).await.expect("giỏ").is_empty());
+}
+
+#[tokio::test]
+async fn place_order_decrements_stock_and_blocks_when_sold_out() {
+    let (repos, services) = fixture();
+    let user = make_user(&repos, "c@x.vn", Role::User).await;
+    let other = make_user(&repos, "d@x.vn", Role::User).await;
+    let product = make_product_with_stock(&repos, "GPU", 100, 5).await;
+
+    services.carts.add_item(user, add_request(product, Some(3))).await.expect("thêm");
+    services
+        .orders
+        .place_order(user, order_request("0901234567", "cod"))
+        .await
+        .expect("đặt hàng");
+    assert_eq!(stock_of(&repos, product).await, 2);
+
+    let err = services.carts.add_item(other, add_request(product, Some(3))).await.unwrap_err();
+    assert!(matches!(err, AppError::Conflict(_)), "chỉ còn 2 nên không thêm 3 được");
+    services.carts.add_item(other, add_request(product, Some(2))).await.expect("thêm 2");
+    services
+        .orders
+        .place_order(other, order_request("0901234567", "cod"))
+        .await
+        .expect("đặt nốt 2 cái cuối");
+    assert_eq!(stock_of(&repos, product).await, 0);
+}
+
+#[tokio::test]
+async fn place_order_fails_when_stock_dropped_after_adding_to_cart() {
+    let (repos, services) = fixture();
+    let admin = make_user(&repos, "admin@x.vn", Role::Admin).await;
+    let user = make_user(&repos, "c@x.vn", Role::User).await;
+    let product = make_product_with_stock(&repos, "GPU", 100, 5).await;
+    services.carts.add_item(user, add_request(product, Some(3))).await.expect("thêm");
+
+    // Admin giảm kho xuống 2 sau khi khách đã bỏ 3 vào giỏ.
+    services
+        .products
+        .update(admin, product, ProductRequest { stock: 2, ..product_request("GPU", 100) })
+        .await
+        .expect("sửa kho");
+
+    let err = services
+        .orders
+        .place_order(user, order_request("0901234567", "cod"))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, AppError::Conflict(_)));
+    assert_eq!(stock_of(&repos, product).await, 2, "kho không bị trừ");
+    assert_eq!(services.carts.get(user).await.expect("giỏ").len(), 1, "giỏ còn nguyên");
+}
+
+#[tokio::test]
+async fn cancelling_an_order_restores_stock() {
+    let (repos, services) = fixture();
+    let admin = make_user(&repos, "admin@x.vn", Role::Admin).await;
+    let user = make_user(&repos, "c@x.vn", Role::User).await;
+    let product = make_product_with_stock(&repos, "GPU", 100, 5).await;
+
+    services.carts.add_item(user, add_request(product, Some(2))).await.expect("thêm");
+    let first = services.orders.place_order(user, order_request("0901234567", "cod")).await.expect("đặt hàng");
+    services.carts.add_item(user, add_request(product, Some(1))).await.expect("thêm");
+    let second = services.orders.place_order(user, order_request("0901234567", "cod")).await.expect("đặt hàng");
+    assert_eq!(stock_of(&repos, product).await, 2);
+
+    services.orders.cancel_order(user, first.id).await.expect("khách hủy");
+    assert_eq!(stock_of(&repos, product).await, 4);
+
+    services
+        .orders
+        .update_status(admin, second.id, status_request("cancelled"))
+        .await
+        .expect("admin hủy");
+    assert_eq!(stock_of(&repos, product).await, 5);
+}
+
+#[tokio::test]
+async fn admin_product_stock_is_validated() {
+    let (repos, services) = fixture();
+    let admin = make_user(&repos, "admin@x.vn", Role::Admin).await;
+
+    let err = services
+        .products
+        .create(admin, ProductRequest { stock: -1, ..product_request("RAM", 100) })
+        .await
+        .unwrap_err();
+    assert!(matches!(err, AppError::BadRequest(_)));
+    let err = services
+        .products
+        .create(admin, ProductRequest { stock: 1_000_001, ..product_request("RAM", 100) })
+        .await
+        .unwrap_err();
+    assert!(matches!(err, AppError::BadRequest(_)));
+    let created = services
+        .products
+        .create(admin, ProductRequest { stock: 0, ..product_request("RAM", 100) })
+        .await
+        .expect("kho 0 là hợp lệ (hết hàng)");
+    assert_eq!(created.stock, 0);
 }

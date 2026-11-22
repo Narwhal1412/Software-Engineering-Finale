@@ -5,17 +5,24 @@
 //   GET    /api/products?q=&categoryId=&sort=new|priceAsc|priceDesc -> [product]
 //          (sản phẩm ghim lên đầu, theo pinnedAt mới nhất trước; q tìm trong name + specs)
 //   POST   /api/uploads        multipart/form-data, trường "file" (jpg/png/webp, tối đa 2 MB) -> {url}   (admin)
-//   POST   /api/products       {name, specs, price, categoryId, imageUrl} -> product   (admin)
-//   PUT    /api/products/:id   {name, specs, price, categoryId, imageUrl} -> product   (admin)
+//   POST   /api/products       {name, specs, price, stock, categoryId, imageUrl} -> product   (admin)
+//   PUT    /api/products/:id   {name, specs, price, stock, categoryId, imageUrl} -> product   (admin)
 //   DELETE /api/products/:id                                                 (admin)
 //   PATCH  /api/products/:id/pin {pinned: true|false} -> product             (admin)
 //   GET    /api/categories -> [{id, name}]      POST /api/categories {name}  (admin)
 //   PUT    /api/categories/:id {name}           DELETE /api/categories/:id   (admin; không xóa sản phẩm, đặt categoryId = null)
+//   GET    /api/policies -> [policy]  (công khai, đã sắp theo sortOrder rồi id)
+//   POST   /api/policies {icon, title, content, categoryId|null, sortOrder} -> policy   (admin)
+//   PUT    /api/policies/:id {icon, title, content, categoryId|null, sortOrder} -> policy   (admin)
+//   DELETE /api/policies/:id                                                 (admin)
+//          (categoryId null = áp dụng cho mọi sản phẩm; xóa danh mục thì chính sách riêng của nó bị xóa theo)
 //   GET    /api/cart -> [{productId, quantity, product}]                      (cần đăng nhập)
 //   POST   /api/cart/items {productId, quantity} ; PATCH /api/cart/items/:productId {quantity>=1}
 //   DELETE /api/cart/items/:productId                (các lệnh trên đều trả về giỏ hàng mới)
+//          (số lượng trong giỏ không được vượt tồn kho `stock` của sản phẩm: HTTP 409 {message})
 //   POST   /api/orders {fullName, phone, address, paymentMethod: 'cod'|'bank'} -> order
-//          (backend tạo đơn từ giỏ hàng, lấy giá từ DB, lưu snapshot, xóa giỏ, status 'pending')
+//          (backend tạo đơn từ giỏ hàng, lấy giá từ DB, lưu snapshot, trừ tồn kho, xóa giỏ, status 'pending';
+//           HTTP 409 {message} nếu có sản phẩm không đủ hàng, khi đó không có gì thay đổi; hủy đơn sẽ hoàn lại tồn kho)
 //   GET    /api/orders -> [order]  (đơn của người dùng hiện tại)
 //   PATCH  /api/orders/:id/cancel -> order  (khách tự hủy đơn của mình, chỉ khi status 'pending'; 404 nếu không phải đơn của mình, 409 nếu đã qua 'pending')
 //   GET    /api/me -> user ; PUT /api/me {displayName, phone, address} -> user      (cần đăng nhập)
@@ -24,8 +31,9 @@
 //   GET    /api/admin/users -> [user] ; DELETE /api/admin/users/:id             (admin; không xóa được admin)
 // status đơn: pending | confirmed | shipped | completed | cancelled
 // order = {id, items:[{productId,name,price,quantity}], total, status, paymentMethod, fullName, phone, address, createdAt}
-// product = {id, name, specs, price, categoryId, imageUrl (url|null), pinnedAt (ISO|null), createdAt}
+// product = {id, name, specs, price, stock (số lượng còn trong kho), categoryId, imageUrl (url|null), pinnedAt (ISO|null), createdAt}
 // user    = {id, email, displayName, phone, address, role: 'user'|'admin'}
+// policy  = {id, icon (shield|refresh|truck|check|card|gift|phone|box), title, content, categoryId (number|null), sortOrder}
 // Header: Authorization: Bearer <token>. Lỗi: HTTP 4xx kèm {message}. HTTP 401 khi đã có token = hết phiên, frontend tự đăng xuất.
 //const API_BASE = '/api';
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
@@ -66,6 +74,10 @@ const api = {
   createCategory: name => call('POST', '/categories', { name }),
   renameCategory: (id, name) => call('PUT', '/categories/' + id, { name }),
   deleteCategory: id => call('DELETE', '/categories/' + id),
+  policies: () => call('GET', '/policies'),
+  createPolicy: b => call('POST', '/policies', b),
+  updatePolicy: (id, b) => call('PUT', '/policies/' + id, b),
+  deletePolicy: id => call('DELETE', '/policies/' + id),
   uploadImage: async file => {
     if (file.size > 2 * 1024 * 1024) throw new Error('Ảnh tối đa 2 MB');
     if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error('Chỉ nhận ảnh JPG, PNG hoặc WebP');

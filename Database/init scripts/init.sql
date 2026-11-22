@@ -34,6 +34,7 @@ CREATE TABLE products (
   name        VARCHAR(200) NOT NULL,
   specs       TEXT         NOT NULL,
   price       BIGINT       NOT NULL,
+  stock       INT          NOT NULL DEFAULT 0,
   category_id BIGINT       NULL DEFAULT NULL,
   image_url   VARCHAR(512) NULL DEFAULT NULL,
   pinned_at   DATETIME(6)  NULL DEFAULT NULL,
@@ -43,8 +44,24 @@ CREATE TABLE products (
   KEY idx_products_created (created_at),
   KEY idx_products_price (price),
   CONSTRAINT ck_products_price CHECK (price >= 0),
+  CONSTRAINT ck_products_stock CHECK (stock >= 0),
   CONSTRAINT fk_products_category FOREIGN KEY (category_id)
     REFERENCES categories (id) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE policies (
+  id          BIGINT       NOT NULL AUTO_INCREMENT,
+  icon        VARCHAR(30)  NOT NULL,
+  title       VARCHAR(150) NOT NULL,
+  content     VARCHAR(500) NOT NULL,
+  category_id BIGINT       NULL DEFAULT NULL,
+  sort_order  INT          NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY idx_policies_category (category_id),
+  KEY idx_policies_sort (sort_order),
+  CONSTRAINT ck_policies_sort_order CHECK (sort_order >= 0),
+  CONSTRAINT fk_policies_category FOREIGN KEY (category_id)
+    REFERENCES categories (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE cart_items (
@@ -115,14 +132,29 @@ INSERT INTO users (id, email, display_name, password_hash, phone, address, role,
 INSERT INTO categories (id, name) VALUES
  (1, 'CPU'), (2, 'Card đồ họa'), (3, 'RAM'), (4, 'Ổ cứng'), (5, 'PC lắp sẵn');
 
-INSERT INTO products (id, name, specs, price, category_id, image_url, pinned_at, created_at) VALUES
- (1, 'Ryzen 7 7800X3D',        '8 nhân 16 luồng, 4.2 GHz, AM5',              9490000, 1, 'https://product.hstatic.net/1000333506/product/5478-7800x3d-tray_5a74882bb94b471f884e41e2136abcf9.jpg', UTC_TIMESTAMP(6) - INTERVAL 1 DAY, UTC_TIMESTAMP(6) - INTERVAL 9 DAY),
- (2, 'Core i5-14600K',         '14 nhân, 5.3 GHz, LGA1700',                  7290000, 1, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSna_VCCxsNUlPFwlss_kxIfFuT8jFWctorJkx4aOcgpw&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 8 DAY),
- (3, 'GeForce RTX 4070 Super', '12 GB GDDR6X, 3 quạt',                      16990000, 2, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlTskthUu3yDV4AZpJ_pYtZBeCT6wub-zMDIzv9jnHhA&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 6 DAY),
- (4, 'Radeon RX 7800 XT',      '16 GB GDDR6, PCIe 4.0',                     12790000, 2, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaS8Rgvd6QU6gCvMUHZE7ut-v2lnjBl_qmV-Jb7bBCrw&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 5 DAY),
- (5, 'Kingston Fury 32GB',     'DDR5 6000 MHz, 2x16 GB',                     2890000, 3, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRR6-PWEUCA2gLvyFJtmH6BtJfayCBvWdD0oFhlPRZivw&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 4 DAY),
- (6, 'Samsung 980 Pro 1TB',    'NVMe Gen4, đọc 7000 MB/s',                   2650000, 4, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSj4_n1Zyn0tXimVq9LIEqVAO6LQQy_RtxxO3gy6jDvZQ&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 3 DAY),
- (7, 'PC Gaming Forge R7',     'R7 7800X3D, RTX 4070 Super, 32GB, 1TB',     36900000, 5, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcStj7UWoebLS-HhWwY0nGqiQkhzMXuAXKnnAGqWcTcl8w&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 2 DAY);
+INSERT INTO products (id, name, specs, price, stock, category_id, image_url, pinned_at, created_at) VALUES
+ (1, 'Ryzen 7 7800X3D',        '8 nhân 16 luồng, 4.2 GHz, AM5',              9490000, 10, 1, 'https://product.hstatic.net/1000333506/product/5478-7800x3d-tray_5a74882bb94b471f884e41e2136abcf9.jpg', UTC_TIMESTAMP(6) - INTERVAL 1 DAY, UTC_TIMESTAMP(6) - INTERVAL 9 DAY),
+ (2, 'Core i5-14600K',         '14 nhân, 5.3 GHz, LGA1700',                  7290000, 15, 1, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSna_VCCxsNUlPFwlss_kxIfFuT8jFWctorJkx4aOcgpw&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 8 DAY),
+ (3, 'GeForce RTX 4070 Super', '12 GB GDDR6X, 3 quạt',                      16990000, 5, 2, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlTskthUu3yDV4AZpJ_pYtZBeCT6wub-zMDIzv9jnHhA&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 6 DAY),
+ (4, 'Radeon RX 7800 XT',      '16 GB GDDR6, PCIe 4.0',                     12790000, 8, 2, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaS8Rgvd6QU6gCvMUHZE7ut-v2lnjBl_qmV-Jb7bBCrw&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 5 DAY),
+ (5, 'Kingston Fury 32GB',     'DDR5 6000 MHz, 2x16 GB',                     2890000, 20, 3, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRR6-PWEUCA2gLvyFJtmH6BtJfayCBvWdD0oFhlPRZivw&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 4 DAY),
+ (6, 'Samsung 980 Pro 1TB',    'NVMe Gen4, đọc 7000 MB/s',                   2650000, 12, 4, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSj4_n1Zyn0tXimVq9LIEqVAO6LQQy_RtxxO3gy6jDvZQ&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 3 DAY),
+ (7, 'PC Gaming Forge R7',     'R7 7800X3D, RTX 4070 Super, 32GB, 1TB',     36900000, 3, 5, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcStj7UWoebLS-HhWwY0nGqiQkhzMXuAXKnnAGqWcTcl8w&s=10', NULL, UTC_TIMESTAMP(6) - INTERVAL 2 DAY);
+
+-- Chính sách và ưu đãi hiển thị trong chi tiết sản phẩm.
+-- category_id NULL = áp dụng cho mọi sản phẩm; có giá trị = chỉ áp dụng cho danh mục đó.
+INSERT INTO policies (id, icon, title, content, category_id, sort_order) VALUES
+ (1,  'shield',  'Bảo hành chính hãng 36 tháng', 'Lỗi do nhà sản xuất được 1 đổi 1 trong 30 ngày đầu, sau đó bảo hành theo chính sách của hãng.', 1, 10),
+ (2,  'shield',  'Bảo hành chính hãng 36 tháng', 'Lỗi do nhà sản xuất được 1 đổi 1 trong 30 ngày đầu, sau đó bảo hành theo chính sách của hãng.', 2, 10),
+ (3,  'shield',  'Bảo hành chính hãng 36 tháng', 'Lỗi do nhà sản xuất được 1 đổi 1 trong 30 ngày đầu, sau đó bảo hành theo chính sách của hãng.', 3, 10),
+ (4,  'shield',  'Bảo hành chính hãng 36 tháng', 'Lỗi do nhà sản xuất được 1 đổi 1 trong 30 ngày đầu, sau đó bảo hành theo chính sách của hãng.', 4, 10),
+ (5,  'shield',  'Bảo hành PC lắp sẵn 24 tháng', 'Bảo hành toàn bộ máy 24 tháng, linh kiện lỗi được thay thế trong 30 ngày đầu.', 5, 10),
+ (6,  'refresh', 'Đổi trả trong 7 ngày', 'Đổi hoặc hoàn tiền nếu sản phẩm lỗi kỹ thuật hoặc giao sai. Sản phẩm cần còn đủ hộp và phụ kiện.', NULL, 20),
+ (7,  'truck',   'Giao hàng toàn quốc', 'Miễn phí giao hàng. Nội thành giao trong 24 giờ, tỉnh khác 2 - 4 ngày.', NULL, 30),
+ (8,  'check',   'Kiểm tra hàng khi nhận', 'Được mở hộp kiểm tra ngoại quan và số seri trước khi thanh toán.', NULL, 40),
+ (9,  'card',    'Thanh toán linh hoạt', 'Thanh toán khi nhận hàng hoặc chuyển khoản ngân hàng.', NULL, 50),
+ (10, 'gift',    'Ưu đãi thành viên', 'Tài khoản thành viên theo dõi đơn hàng và nhận thông báo khuyến mãi sớm.', NULL, 60),
+ (11, 'phone',   'Hỗ trợ kỹ thuật', 'Tư vấn lắp đặt, cài đặt: gọi 1900 0001 (8:00 - 21:00).', NULL, 70);
 
 INSERT INTO cart_items (user_id, product_id, quantity) VALUES (2, 6, 1), (2, 2, 2);
 

@@ -15,6 +15,8 @@ use crate::services::validation::{optional_text, required_text};
 const SPECS_MAX_LEN: usize = 5000;
 /// Giá tối đa chấp nhận (100 tỷ đồng), chặn nhập nhầm và tràn số khi nhân với số lượng.
 const MAX_PRICE: i64 = 100_000_000_000;
+/// Tồn kho tối đa chấp nhận cho một sản phẩm, chặn nhập nhầm.
+const MAX_STOCK: i32 = 1_000_000;
 /// Các tiền tố URL ảnh được phép: ảnh upload nội bộ hoặc ảnh ngoài qua HTTP(S).
 const ALLOWED_IMAGE_PREFIXES: [&str; 3] = ["/uploads/", "http://", "https://"];
 
@@ -87,10 +89,12 @@ fn to_input(request: ProductRequest) -> Result<ProductInput, AppError> {
     let name = required_text(&request.name, "tên sản phẩm", PRODUCT_NAME_MAX_LEN)?;
     let specs = optional_text(&request.specs, "thông số", SPECS_MAX_LEN)?;
     validate_price(request.price)?;
+    validate_stock(request.stock)?;
     Ok(ProductInput {
         name,
         specs,
         price: request.price,
+        stock: request.stock,
         category_id: request.category_id,
         image_url: clean_image_url(request.image_url.as_deref())?,
     })
@@ -102,6 +106,17 @@ fn validate_price(price: i64) -> Result<(), AppError> {
         Err(AppError::BadRequest("Giá phải lớn hơn 0".to_owned()))
     } else if price > MAX_PRICE {
         Err(AppError::BadRequest("Giá quá lớn".to_owned()))
+    } else {
+        Ok(())
+    }
+}
+
+/// Tồn kho phải trong khoảng 0..=`MAX_STOCK`.
+fn validate_stock(stock: i32) -> Result<(), AppError> {
+    if stock < 0 {
+        Err(AppError::BadRequest("Số lượng tồn kho không được âm".to_owned()))
+    } else if stock > MAX_STOCK {
+        Err(AppError::BadRequest("Số lượng tồn kho quá lớn".to_owned()))
     } else {
         Ok(())
     }

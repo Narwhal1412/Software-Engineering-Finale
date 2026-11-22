@@ -60,7 +60,7 @@ pub(super) fn map_sqlx_error(err: sqlx::Error) -> RepoError {
 
 /// Tên trường khóa ngoại, suy ra từ tên ràng buộc.
 fn reference_field(message: &str) -> &'static str {
-    if message.contains("fk_products_category") {
+    if message.contains("fk_products_category") || message.contains("fk_policies_category") {
         "category_id"
     } else if message.contains("fk_cart_items_user") || message.contains("fk_orders_user") {
         "user_id"

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from './api.js';
-import { Field, Modal, OrderBox, run, toast, vnd } from './ui.jsx';
+import { Field, Icon, Modal, OrderBox, run, toast, vnd } from './ui.jsx';
+import { policiesFor } from './perks.js';
 
 function AuthModal({ onClose, setUser }) {
   const [reg, setReg] = useState(false);
@@ -19,46 +20,68 @@ function AuthModal({ onClose, setUser }) {
     }, setErr);
   };
   return (
-    <Modal title={reg ? 'Đăng ký' : 'Đăng nhập'} onClose={onClose}>
-      <form onSubmit={submit}>
-        <div className="tabs">
-          <button type="button" className="btn" aria-selected={!reg} onClick={() => setReg(false)}>
-            Đăng nhập
-          </button>
-          <button type="button" className="btn" aria-selected={reg} onClick={() => setReg(true)}>
-            Đăng ký
-          </button>
+    <Modal title={reg ? 'Đăng ký' : 'Đăng nhập'} cls="auth" onClose={onClose}>
+      <aside className="auth-side" aria-hidden="true">
+        <div className="fb">
+          Tech<b>Box</b>
         </div>
-        <Field id="aEmail" label="Email" type="email" required value={f.email} onChange={set('email')} />
-        {reg && <Field id="aName" label="Tên hiển thị" value={f.displayName} onChange={set('displayName')} />}
-        <Field
-          id="aPass"
-          label="Mật khẩu"
-          type="password"
-          required
-          minLength={6}
-          value={f.password}
-          onChange={set('password')}
-        />
-        {reg && (
+        <p>Linh kiện và PC chính hãng, giao nhanh toàn quốc.</p>
+        <ul>
+          <li>
+            <Icon name="check" size={16} />
+            Bảo hành chính hãng
+          </li>
+          <li>
+            <Icon name="check" size={16} />
+            Theo dõi đơn hàng dễ dàng
+          </li>
+          <li>
+            <Icon name="check" size={16} />
+            Ưu đãi cho thành viên
+          </li>
+        </ul>
+      </aside>
+      <div className="auth-main">
+        <form onSubmit={submit}>
+          <div className="tabs">
+            <button type="button" className="btn" aria-selected={!reg} onClick={() => setReg(false)}>
+              Đăng nhập
+            </button>
+            <button type="button" className="btn" aria-selected={reg} onClick={() => setReg(true)}>
+              Đăng ký
+            </button>
+          </div>
+          <Field id="aEmail" label="Email" type="email" required value={f.email} onChange={set('email')} />
+          {reg && <Field id="aName" label="Tên hiển thị" value={f.displayName} onChange={set('displayName')} />}
           <Field
-            id="aPass2"
-            label="Nhập lại mật khẩu"
+            id="aPass"
+            label="Mật khẩu"
             type="password"
-            value={f.confirmPassword}
-            onChange={set('confirmPassword')}
+            required
+            minLength={6}
+            value={f.password}
+            onChange={set('password')}
           />
-        )}
-        <p className="err" role="alert">
-          {err}
-        </p>
-        <div className="row">
-          <button type="button" className="btn" onClick={onClose}>
-            Hủy
-          </button>
-          <button className="btn main">{reg ? 'Đăng ký' : 'Đăng nhập'}</button>
-        </div>
-      </form>
+          {reg && (
+            <Field
+              id="aPass2"
+              label="Nhập lại mật khẩu"
+              type="password"
+              value={f.confirmPassword}
+              onChange={set('confirmPassword')}
+            />
+          )}
+          <p className="err" role="alert">
+            {err}
+          </p>
+          <div className="row">
+            <button type="button" className="btn" onClick={onClose}>
+              Hủy
+            </button>
+            <button className="btn main">{reg ? 'Đăng ký' : 'Đăng nhập'}</button>
+          </div>
+        </form>
+      </div>
     </Modal>
   );
 }
@@ -83,54 +106,90 @@ function CartModal({ cart, reload, onClose }) {
       toast('Đặt hàng thành công, mã đơn #' + o.id);
     }, setErr);
   };
+  const count = cart.reduce((n, i) => n + i.quantity, 0);
   return (
-    <Modal title="Giỏ hàng" wide onClose={onClose}>
+    <Modal title="Giỏ hàng" wide cls="cart" onClose={onClose}>
       {cart.length === 0 ? (
-        <div className="empty">Giỏ hàng trống. Chọn sản phẩm rồi bấm Thêm vào giỏ.</div>
+        <div className="empty">
+          <div className="empty-ic">
+            <Icon name="cart" size={44} />
+          </div>
+          Giỏ hàng trống. Chọn sản phẩm rồi bấm Thêm vào giỏ.
+        </div>
       ) : (
         <>
-          {cart.map(i => (
-            <div className="line" key={i.productId}>
-              <div>
-                <strong>{i.product.name}</strong>
-                <br />
-                <span className="tag">{vnd(i.product.price)}</span>
+          <div className="cart-list">
+            {cart.map(i => (
+              <div className="citem" key={i.productId}>
+                {i.product.imageUrl ? (
+                  <img className="cthumb" src={i.product.imageUrl} alt="" />
+                ) : (
+                  <div className="cthumb" aria-hidden="true" />
+                )}
+                <div className="cinfo">
+                  <strong>{i.product.name}</strong>
+                  <span className="tag">{vnd(i.product.price)}</span>
+                  {i.quantity > i.product.stock && (
+                    <div className="err" role="alert">
+                      {i.product.stock > 0 ? `Chỉ còn ${i.product.stock} sản phẩm trong kho` : 'Sản phẩm đã hết hàng'}
+                    </div>
+                  )}
+                </div>
+                <div className="cside">
+                  <div className="stepper">
+                    <button className="btn" aria-label="Giảm số lượng" onClick={() => qty(i.productId, i.quantity - 1)}>
+                      −
+                    </button>
+                    <span>{i.quantity}</span>
+                    <button
+                      className="btn"
+                      aria-label="Tăng số lượng"
+                      disabled={i.quantity >= i.product.stock}
+                      title={i.quantity >= i.product.stock ? 'Đã đạt số lượng tối đa trong kho' : undefined}
+                      onClick={() => qty(i.productId, i.quantity + 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="csub">{vnd(i.product.price * i.quantity)}</span>
+                  <button
+                    className="link-btn"
+                    onClick={() =>
+                      run(async () => {
+                        await api.removeFromCart(i.productId);
+                        await reload();
+                      })
+                    }
+                  >
+                    Bỏ
+                  </button>
+                </div>
               </div>
-              <div className="qty">
-                <button className="btn" aria-label="Giảm số lượng" onClick={() => qty(i.productId, i.quantity - 1)}>
-                  −
-                </button>
-                <span>{i.quantity}</span>
-                <button className="btn" aria-label="Tăng số lượng" onClick={() => qty(i.productId, i.quantity + 1)}>
-                  +
-                </button>
-                <button
-                  className="btn bad"
-                  onClick={() =>
-                    run(async () => {
-                      await api.removeFromCart(i.productId);
-                      await reload();
-                    })
-                  }
-                >
-                  Bỏ
-                </button>
+            ))}
+          </div>
+          <div className="csum">
+            <span className="tag">{count} sản phẩm</span>
+            <div className="total">Tổng: {vnd(total)}</div>
+          </div>
+          <form className="checkout" onSubmit={submit}>
+            <h3>Thông tin giao hàng</h3>
+            <div className="fgrid">
+              <div>
+                <Field id="oName" label="Họ tên người nhận" required value={f.fullName} onChange={set('fullName')} />
+              </div>
+              <div>
+                <Field
+                  id="oPhone"
+                  label="Số điện thoại"
+                  type="tel"
+                  required
+                  pattern="[0-9]{9,11}"
+                  title="9 đến 11 chữ số"
+                  value={f.phone}
+                  onChange={set('phone')}
+                />
               </div>
             </div>
-          ))}
-          <div className="total">Tổng: {vnd(total)}</div>
-          <form onSubmit={submit}>
-            <Field id="oName" label="Họ tên người nhận" required value={f.fullName} onChange={set('fullName')} />
-            <Field
-              id="oPhone"
-              label="Số điện thoại"
-              type="tel"
-              required
-              pattern="[0-9]{9,11}"
-              title="9 đến 11 chữ số"
-              value={f.phone}
-              onChange={set('phone')}
-            />
             <Field id="oAddr" label="Địa chỉ giao hàng" required value={f.address} onChange={set('address')} />
             <label htmlFor="oPay">Thanh toán</label>
             <select id="oPay" value={f.paymentMethod} onChange={set('paymentMethod')}>
@@ -140,7 +199,7 @@ function CartModal({ cart, reload, onClose }) {
             <p className="err" role="alert">
               {err}
             </p>
-            <button className="btn main">Đặt hàng</button>
+            <button className="btn main block">Đặt hàng</button>
           </form>
         </>
       )}
@@ -221,9 +280,62 @@ function OrdersModal({ onClose }) {
         ) : list.length ? (
           list.map(o => <OrderBox key={o.id} o={o} onCancel={cancel} />)
         ) : (
-          <div className="empty">Bạn chưa có đơn hàng nào.</div>
+          <div className="empty">
+            <div className="empty-ic">
+              <Icon name="box" size={44} />
+            </div>
+            Bạn chưa có đơn hàng nào.
+          </div>
         )}
       </div>
+      <div className="row">
+        <button className="btn" onClick={onClose}>
+          Đóng
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function ProductModal({ p, catName, items, onAdd, onClose }) {
+  const out = p.stock <= 0;
+  return (
+    <Modal title={p.name} wide cls="pdetail" onClose={onClose}>
+      <div className="pd-top">
+        {p.imageUrl ? (
+          <img className="ph pd-img" src={p.imageUrl} alt={p.name} />
+        ) : (
+          <div className="ph pd-img">Chưa có ảnh</div>
+        )}
+        <div className="pd-info">
+          <span className="tag">{catName}</span>
+          <div className="price">{vnd(p.price)}</div>
+          <span className={'pd-stock' + (out ? ' out' : '')}>{out ? 'Hết hàng' : `Còn ${p.stock} sản phẩm`}</span>
+          <p className="pd-specs">{p.specs}</p>
+          <button className="btn main block" disabled={out} onClick={() => onAdd(p.id)}>
+            {out ? 'Hết hàng' : 'Thêm vào giỏ'}
+          </button>
+        </div>
+      </div>
+      <h3 className="pd-h">Chính sách và ưu đãi</h3>
+      {items.length === 0 ? (
+        <p className="tag">Chưa có chính sách nào cho sản phẩm này.</p>
+      ) : (
+        <ul className="perks">
+          {items.map(x => (
+            <li key={x.id}>
+              <span className="perk-ic">
+                <Icon name={x.icon} size={20} />
+              </span>
+              <div>
+                <b>{x.title}</b>
+                <span className="tag">{x.content}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="tag">Chính sách và số liệu mang tính minh họa của bản demo.</p>
       <div className="row">
         <button className="btn" onClick={onClose}>
           Đóng
@@ -271,6 +383,8 @@ export default function Shop({ user, setUser }) {
   const [sort, setSort] = useState('new');
   const [cart, setCart] = useState([]);
   const [modal, setModal] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [policies, setPolicies] = useState([]);
   const close = useCallback(() => setModal(null), []);
 
   useEffect(() => {
@@ -279,6 +393,7 @@ export default function Shop({ user, setUser }) {
   }, [q]); // live search trễ 300ms
   useEffect(() => {
     run(async () => setCats(await api.categories()));
+    run(async () => setPolicies(await api.policies()));
   }, []);
   useEffect(() => {
     run(async () => setProds(await api.products({ q: dq, categoryId: cat, sort })));
@@ -301,6 +416,10 @@ export default function Shop({ user, setUser }) {
         await loadCart();
         toast('Đã thêm vào giỏ hàng');
       });
+  };
+  const openDetail = p => {
+    setDetail(p);
+    setModal('detail');
   };
   const count = cart.reduce((n, i) => n + i.quantity, 0);
   const curCat = cats.find(c => String(c.id) === cat);
@@ -379,7 +498,11 @@ export default function Shop({ user, setUser }) {
             <div className="empty">Không có sản phẩm phù hợp. Thử từ khóa hoặc danh mục khác.</div>
           )}
           {prods.map(p => (
-            <article className={'card' + (p.pinnedAt ? ' pin' : '')} key={p.id}>
+            <article
+              className={'card clickable' + (p.pinnedAt ? ' pin' : '')}
+              key={p.id}
+              onClick={e => !e.target.closest('button') && openDetail(p)}
+            >
               {p.pinnedAt && <span className="badge">Nổi bật</span>}
               {p.imageUrl ? (
                 <img className="ph" src={p.imageUrl} alt={p.name} loading="lazy" />
@@ -390,9 +513,22 @@ export default function Shop({ user, setUser }) {
               <h3>{p.name}</h3>
               <p className="spec">{p.specs}</p>
               <div className="price">{vnd(p.price)}</div>
+              <span className="tag">{p.stock > 0 ? `Còn ${p.stock} sản phẩm` : p.stock <= 0 ? 'Hết hàng' : ''}</span>
+              {policiesFor(policies, p.categoryId).length > 0 && (
+                <span className="mini-perk">
+                  <Icon name={policiesFor(policies, p.categoryId)[0].icon} size={14} />
+                  {policiesFor(policies, p.categoryId)
+                    .slice(0, 2)
+                    .map(x => x.title)
+                    .join(' · ')}
+                </span>
+              )}
               <div className="acts">
-                <button className="btn main" onClick={() => add(p.id)}>
-                  Thêm vào giỏ
+                <button className="btn main" disabled={p.stock <= 0} onClick={() => add(p.id)}>
+                  {p.stock <= 0 ? 'Hết hàng' : 'Thêm vào giỏ'}
+                </button>
+                <button className="btn" aria-label={'Xem chi tiết ' + p.name} onClick={() => openDetail(p)}>
+                  Chi tiết và ưu đãi
                 </button>
               </div>
             </article>
@@ -484,6 +620,15 @@ export default function Shop({ user, setUser }) {
       {modal === 'prof' && <ProfileModal user={user} setUser={setUser} onClose={close} />}
       {modal === 'orders' && <OrdersModal onClose={close} />}
       {modal === 'help' && <HelpModal onClose={close} />}
+      {modal === 'detail' && detail && (
+        <ProductModal
+          p={detail}
+          catName={catName(detail.categoryId)}
+          items={policiesFor(policies, detail.categoryId)}
+          onAdd={add}
+          onClose={close}
+        />
+      )}
     </>
   );
 }

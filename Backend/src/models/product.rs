@@ -13,6 +13,8 @@ pub struct Product {
     pub specs: String,
     /// Đơn giá (VND), không âm.
     pub price: i64,
+    /// Số lượng tồn kho, không âm. Giảm khi đặt hàng, hoàn lại khi đơn bị hủy.
+    pub stock: i32,
     /// Danh mục; `None` khi chưa phân loại hoặc danh mục đã bị xóa.
     pub category_id: Option<i64>,
     /// URL ảnh; `None` nếu chưa có ảnh.
@@ -32,6 +34,8 @@ pub struct ProductInput {
     pub specs: String,
     /// Đơn giá (VND).
     pub price: i64,
+    /// Số lượng tồn kho (không âm).
+    pub stock: i32,
     /// Danh mục (phải tồn tại nếu có giá trị).
     pub category_id: Option<i64>,
     /// URL ảnh.

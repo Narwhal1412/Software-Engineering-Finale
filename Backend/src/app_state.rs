@@ -6,15 +6,15 @@ use crate::config::Config;
 use crate::db;
 use crate::repositories::mock::{
     InMemoryCartRepository, InMemoryCategoryRepository, InMemoryOrderRepository,
-    InMemoryProductRepository, InMemoryUserRepository, MockStore,
+    InMemoryPolicyRepository, InMemoryProductRepository, InMemoryUserRepository, MockStore,
 };
 use crate::repositories::mysql::{
-    MySqlCartRepository, MySqlCategoryRepository, MySqlOrderRepository, MySqlProductRepository,
-    MySqlUserRepository,
+    MySqlCartRepository, MySqlCategoryRepository, MySqlOrderRepository, MySqlPolicyRepository,
+    MySqlProductRepository, MySqlUserRepository,
 };
 use crate::repositories::{
-    CartRepository, CategoryRepository, OrderRepository, ProductRepository, RepoError,
-    UserRepository,
+    CartRepository, CategoryRepository, OrderRepository, PolicyRepository, ProductRepository,
+    RepoError, UserRepository,
 };
 use crate::services::Services;
 
@@ -32,6 +32,8 @@ pub struct Repositories {
     pub carts: Arc<dyn CartRepository>,
     /// Truy cập đơn hàng.
     pub orders: Arc<dyn OrderRepository>,
+    /// Truy cập chính sách và ưu đãi.
+    pub policies: Arc<dyn PolicyRepository>,
 }
 
 /// Trạng thái toàn ứng dụng.
@@ -60,7 +62,7 @@ impl AppState {
 
 /// Dựng repository MariaDB thật. ĐÂY LÀ CHỖ DUY NHẤT chọn implementation của tầng DAL
 /// khi chạy chương trình. Mở pool (có thử lại, vì DB có thể khởi động chậm hơn backend)
-/// rồi dùng chung một pool cho năm repository.
+/// rồi dùng chung một pool cho sáu repository.
 pub async fn build_repositories(config: &Config) -> Result<Repositories, RepoError> {
     let pool = db::connect_with_retry(config).await?;
     Ok(Repositories {
@@ -68,7 +70,8 @@ pub async fn build_repositories(config: &Config) -> Result<Repositories, RepoErr
         categories: Arc::new(MySqlCategoryRepository::new(pool.clone())),
         products: Arc::new(MySqlProductRepository::new(pool.clone())),
         carts: Arc::new(MySqlCartRepository::new(pool.clone())),
-        orders: Arc::new(MySqlOrderRepository::new(pool)),
+        orders: Arc::new(MySqlOrderRepository::new(pool.clone())),
+        policies: Arc::new(MySqlPolicyRepository::new(pool)),
     })
 }
 
@@ -81,6 +84,7 @@ pub fn build_mock_repositories() -> Result<Repositories, RepoError> {
         categories: Arc::new(InMemoryCategoryRepository::new(store.clone())),
         products: Arc::new(InMemoryProductRepository::new(store.clone())),
         carts: Arc::new(InMemoryCartRepository::new(store.clone())),
-        orders: Arc::new(InMemoryOrderRepository::new(store)),
+        orders: Arc::new(InMemoryOrderRepository::new(store.clone())),
+        policies: Arc::new(InMemoryPolicyRepository::new(store)),
     })
 }

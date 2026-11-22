@@ -167,6 +167,7 @@ async fn create_product(
             "name": name,
             "specs": "thông số thử",
             "price": price,
+            "stock": 1000,
             "categoryId": category_id
         })),
     )
@@ -859,7 +860,7 @@ async fn order_keeps_the_price_at_purchase_time() {
         "PUT",
         &format!("/api/products/{product_id}"),
         Some(&admin),
-        Some(json!({ "name": name, "specs": "x", "price": 1_000 })),
+        Some(json!({ "name": name, "specs": "x", "price": 1_000, "stock": 1000 })),
     )
     .await;
     assert_eq!(status, StatusCode::OK);
@@ -1074,4 +1075,126 @@ async fn deleted_users_token_stops_working() {
     // Token vẫn còn hạn nhưng tài khoản đã bị xóa -> 401 để frontend tự đăng xuất.
     let (status, _) = send(&app, "GET", "/api/me", Some(&token), None).await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+#[ignore = "cần MariaDB đã nạp init.sql"]
+async fn cart_and_order_cannot_exceed_stock() {
+    let app = app().await;
+    let admin = admin_token(&app).await;
+    let (token, _, _) = register_customer(&app).await;
+    let name = unique("sp");
+    let (status, body) = send(
+        &app,
+        "POST",
+        "/api/products",
+        Some(&admin),
+        Some(json!({ "name": name, "specs": "x", "price": 1_000, "stock": 3 })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(body["stock"], 3);
+    let product_id = body["id"].as_i64().expect("id sản phẩm");
+
+    // Thêm vượt tồn kho -> 409 kèm message.
+    let (status, body) = send(
+        &app,
+        "POST",
+        "/api/cart/items",
+        Some(&token),
+        Some(json!({ "productId": product_id, "quantity": 4 })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert!(body["message"].as_str().is_some_and(|m| !m.is_empty()));
+
+    // Đặt đủ 3 -> kho về 0; sản phẩm hết hàng không thêm được nữa.
+    add_to_cart(&app, &token, product_id, 3).await;
+    place_order(&app, &token).await;
+    let (status, _) = send(
+        &app,
+        "POST",
+        "/api/cart/items",
+        Some(&token),
+        Some(json!({ "productId": product_id, "quantity": 1 })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+
+    // Kho giảm xuống 0 sau khi đặt được phản ánh ở danh sách sản phẩm.
+    let (_, list) = send(&app, "GET", &format!("/api/products?q={name}"), None, None).await;
+    assert_eq!(list[0]["stock"], 0);
+}
+
+// ----------------------------------------------------------------------------
+// Chính sách và ưu đãi
+// ----------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore = "cần MariaDB đã nạp init.sql"]
+async fn admin_manages_policies_and_everyone_can_read_them() {
+    let app = app().await;
+    let admin = admin_token(&app).await;
+    let (customer, _, _) = register_customer(&app).await;
+    let (category_id, _) = create_category(&app, &admin).await;
+    let title = unique("cs");
+    let body = json!({
+        "icon": "shield",
+        "title": title,
+        "content": "Nội dung thử",
+        "categoryId": category_id,
+        "sortOrder": 5
+    });
+
+    // Khách không được tạo.
+    let (status, _) = send(&app, "POST", "/api/policies", Some(&customer), Some(body.clone())).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+
+    // Dữ liệu sai: biểu tượng lạ, danh mục không tồn tại.
+    let mut bad_icon = body.clone();
+    bad_icon["icon"] = json!("khong-co");
+    let (status, _) = send(&app, "POST", "/api/policies", Some(&admin), Some(bad_icon)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    let mut bad_category = body.clone();
+    bad_category["categoryId"] = json!(MISSING_ID);
+    let (status, _) = send(&app, "POST", "/api/policies", Some(&admin), Some(bad_category)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+
+    // Admin tạo; ai cũng đọc được danh sách.
+    let (status, created) = send(&app, "POST", "/api/policies", Some(&admin), Some(body)).await;
+    assert_eq!(status, StatusCode::CREATED);
+    let id = created["id"].as_i64().expect("id chính sách");
+    assert_eq!(created["categoryId"], category_id);
+    let (status, list) = send(&app, "GET", "/api/policies", None, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(list
+        .as_array()
+        .expect("mảng")
+        .iter()
+        .any(|policy| policy["id"] == id));
+
+    // Sửa thành chính sách chung (categoryId = null).
+    let (status, updated) = send(
+        &app,
+        "PUT",
+        &format!("/api/policies/{id}"),
+        Some(&admin),
+        Some(json!({
+            "icon": "truck",
+            "title": "Giao nhanh",
+            "content": "Nội dung mới",
+            "categoryId": null,
+            "sortOrder": 6
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(updated["icon"], "truck");
+    assert!(updated["categoryId"].is_null());
+
+    // Xóa: lần hai là 404.
+    let (status, _) = send(&app, "DELETE", &format!("/api/policies/{id}"), Some(&admin), None).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (status, _) = send(&app, "DELETE", &format!("/api/policies/{id}"), Some(&admin), None).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
 }

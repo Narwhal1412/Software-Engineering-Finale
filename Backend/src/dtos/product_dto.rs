@@ -1,5 +1,5 @@
 //! DTO của sản phẩm:
-//! `product = {id, name, specs, price, categoryId, imageUrl, pinnedAt, createdAt}`.
+//! `product = {id, name, specs, price, stock, categoryId, imageUrl, pinnedAt, createdAt}`.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -18,6 +18,8 @@ pub struct ProductResponse {
     pub specs: String,
     /// Đơn giá (VND).
     pub price: i64,
+    /// Số lượng còn trong kho.
+    pub stock: i32,
     /// Danh mục, `null` nếu chưa phân loại.
     pub category_id: Option<i64>,
     /// URL ảnh, `null` nếu chưa có.
@@ -35,6 +37,7 @@ impl From<Product> for ProductResponse {
             name: product.name,
             specs: product.specs,
             price: product.price,
+            stock: product.stock,
             category_id: product.category_id,
             image_url: product.image_url,
             pinned_at: product.pinned_at,
@@ -70,6 +73,9 @@ pub struct ProductRequest {
     /// Đơn giá (VND); thiếu được coi là 0 để bị service từ chối với thông báo rõ ràng.
     #[serde(default)]
     pub price: i64,
+    /// Số lượng tồn kho; thiếu được coi là 0 (hết hàng).
+    #[serde(default)]
+    pub stock: i32,
     /// Danh mục (`null` = chưa phân loại).
     #[serde(default)]
     pub category_id: Option<i64>,

@@ -6,6 +6,7 @@ pub mod auth_dto;
 pub mod cart_dto;
 pub mod category_dto;
 pub mod order_dto;
+pub mod policy_dto;
 pub mod product_dto;
 pub mod stats_dto;
 pub mod upload_dto;

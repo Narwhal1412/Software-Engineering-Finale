@@ -117,9 +117,10 @@ impl OrderRepository for MySqlOrderRepository {
             return Err(RepoError::InvalidReference { field: "user_id" });
         }
 
-        // 1. Đọc giỏ cùng tên/giá HIỆN HÀNH của sản phẩm (đây là snapshot). FOR UPDATE khóa các dòng.
+        // 1. Đọc giỏ cùng tên/giá/tồn kho HIỆN HÀNH của sản phẩm (đây là snapshot).
+        //    FOR UPDATE khóa cả dòng giỏ lẫn dòng sản phẩm nên hai đơn đặt cùng lúc không trừ kho trùng.
         let lines = sqlx::query(
-            "SELECT ci.product_id, ci.quantity, p.name, p.price \
+            "SELECT ci.product_id, ci.quantity, p.name, p.price, p.stock \
              FROM cart_items ci JOIN products p ON p.id = ci.product_id \
              WHERE ci.user_id = ? ORDER BY ci.product_id FOR UPDATE",
         )
@@ -131,7 +132,8 @@ impl OrderRepository for MySqlOrderRepository {
             return Err(RepoError::Constraint("cart is empty".to_owned()));
         }
 
-        // 2. Tính total = Σ price × quantity, và gom các dòng hàng cần ghi.
+        // 2. Kiểm tra và trừ tồn kho, tính total = Σ price × quantity, gom các dòng hàng cần ghi.
+        //    Thiếu hàng ở bất kỳ sản phẩm nào -> trả lỗi, `tx` bị hủy nên kho không bị trừ.
         let mut snapshot: Vec<(i64, String, i64, i32)> = Vec::with_capacity(lines.len());
         let mut total: i64 = 0;
         for line in &lines {
@@ -139,6 +141,19 @@ impl OrderRepository for MySqlOrderRepository {
             let quantity: i32 = line.try_get("quantity").map_err(map_sqlx_error)?;
             let name: String = line.try_get("name").map_err(map_sqlx_error)?;
             let price: i64 = line.try_get("price").map_err(map_sqlx_error)?;
+            let stock: i32 = line.try_get("stock").map_err(map_sqlx_error)?;
+            if stock < quantity {
+                return Err(RepoError::OutOfStock {
+                    product: name,
+                    available: stock,
+                });
+            }
+            sqlx::query("UPDATE products SET stock = stock - ? WHERE id = ?")
+                .bind(quantity)
+                .bind(product_id)
+                .execute(&mut *tx)
+                .await
+                .map_err(map_sqlx_error)?;
             total = total.saturating_add(price.saturating_mul(i64::from(quantity)));
             snapshot.push((product_id, name, price, quantity));
         }
@@ -238,12 +253,38 @@ impl OrderRepository for MySqlOrderRepository {
     }
 
     async fn update_status(&self, id: i64, status: OrderStatus) -> Result<Order, RepoError> {
+        let mut tx = self.pool.begin().await.map_err(map_sqlx_error)?;
+
+        // Khóa dòng đơn để biết trạng thái hiện tại và tránh hoàn kho hai lần khi hủy đồng thời.
+        let current = sqlx::query_scalar::<MySql, String>(
+            "SELECT CAST(status AS CHAR) FROM orders WHERE id = ? FOR UPDATE",
+        )
+        .bind(id)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(map_sqlx_error)?
+        .ok_or(RepoError::NotFound { entity: "order" })?;
+        let current = decode_enum::<OrderStatus>(&current)?;
+
+        // Hủy đơn (từ trạng thái khác `cancelled`) thì hoàn lại tồn kho.
+        if status == OrderStatus::Cancelled && current != OrderStatus::Cancelled {
+            sqlx::query(
+                "UPDATE products p JOIN order_items oi ON oi.product_id = p.id \
+                 SET p.stock = p.stock + oi.quantity WHERE oi.order_id = ?",
+            )
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_sqlx_error)?;
+        }
+
         sqlx::query("UPDATE orders SET status = ? WHERE id = ?")
             .bind(status.as_str())
             .bind(id)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await
             .map_err(map_sqlx_error)?;
+        tx.commit().await.map_err(map_sqlx_error)?;
 
         self.fetch_by_id(id)
             .await?

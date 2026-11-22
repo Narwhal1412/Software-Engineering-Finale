@@ -6,6 +6,7 @@ pub mod authz;
 pub mod cart_service;
 pub mod category_service;
 pub mod order_service;
+pub mod policy_service;
 pub mod product_service;
 pub mod stats_service;
 pub mod upload_service;
@@ -24,6 +25,7 @@ use auth_service::AuthService;
 use cart_service::CartService;
 use category_service::CategoryService;
 use order_service::OrderService;
+use policy_service::PolicyService;
 use product_service::ProductService;
 use stats_service::StatsService;
 use upload_service::UploadService;
@@ -38,6 +40,8 @@ pub struct Services {
     pub users: Arc<UserService>,
     /// Danh mục.
     pub categories: Arc<CategoryService>,
+    /// Chính sách và ưu đãi.
+    pub policies: Arc<PolicyService>,
     /// Sản phẩm.
     pub products: Arc<ProductService>,
     /// Upload ảnh.
@@ -57,6 +61,7 @@ impl Services {
             auth: Arc::new(AuthService::new(repos.users.clone(), config.clone())),
             users: Arc::new(UserService::new(repos.users.clone())),
             categories: Arc::new(CategoryService::new(repos.categories.clone())),
+            policies: Arc::new(PolicyService::new(repos.policies.clone())),
             products: Arc::new(ProductService::new(repos.products.clone())),
             uploads: Arc::new(UploadService::new(&config.upload_dir)),
             carts: Arc::new(CartService::new(

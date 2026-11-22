@@ -10,6 +10,7 @@ use super::seed::seed_tables;
 use crate::models::cart::CartItem;
 use crate::models::category::Category;
 use crate::models::order::Order;
+use crate::models::policy::Policy;
 use crate::models::product::Product;
 use crate::models::user::User;
 use crate::repositories::RepoError;
@@ -34,6 +35,7 @@ pub(super) struct Sequences {
     pub(super) product: Sequence,
     pub(super) order: Sequence,
     pub(super) order_item: Sequence,
+    pub(super) policy: Sequence,
 }
 
 /// Các "bảng". `BTreeMap` giữ thứ tự khóa tăng dần nên kết quả ổn định giữa các lần chạy.
@@ -46,6 +48,7 @@ pub(super) struct Tables {
     pub(super) cart_items: BTreeMap<(i64, i64), CartItem>,
     /// Mỗi `Order` chứa luôn các `OrderItem` của nó.
     pub(super) orders: BTreeMap<i64, Order>,
+    pub(super) policies: BTreeMap<i64, Policy>,
     pub(super) sequences: Sequences,
 }
 

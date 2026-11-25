@@ -169,6 +169,65 @@ If PowerShell blocks the script: `powershell -ExecutionPolicy Bypass -File .\run
 
 The script ends with `TẤT CẢ TEST ĐỀU PASS` (all passed) or `CÓ TEST LỖI` (some failed) and returns a non-zero exit code on failure. The first run is slow because images and dependencies are downloaded.
 
+## Coding Conventions
+
+| Part | Tool | Configuration | How to run |
+|------|------|---------------|------------|
+| Backend (Rust) | rustfmt | default rules | `cargo fmt --check` (fix: `cargo fmt`) |
+| Backend (Rust) | Clippy, every warning treated as an error | `-D warnings` | `docker compose -f compose.test.yaml run --rm backend-lint` |
+| Frontend (JS/JSX) | Prettier | `Frontend/.prettierrc` | `npm run format:check` (fix: `npm run format`) |
+| Frontend (JS/JSX) | ESLint | `Frontend/eslint.config.js` | `npm run lint` |
+| Frontend (all files) | EditorConfig | `Frontend/.editorconfig` | editor plugin |
+
+### Formatting
+
+- Files are UTF-8 with LF line endings, end with a newline and have no trailing spaces (EditorConfig).
+- Frontend: 2-space indentation, single quotes, semicolons, no trailing commas, arrow functions without parentheses for one parameter (`x => x`), lines up to 120 characters (Prettier).
+- Backend: standard rustfmt layout (4 spaces, lines up to 100 characters).
+
+### Naming
+
+| Item | Rule | Example |
+|------|------|---------|
+| Rust files, modules, functions, variables | `snake_case` | `order_service.rs`, `place_order` |
+| Rust types, traits, enum variants | `PascalCase` | `OrderStatus`, `UserRepository` |
+| Rust constants | `SCREAMING_SNAKE_CASE` | `MAX_CART_QUANTITY` |
+| Backend files by layer | `<feature>_<layer>.rs` | `cart_controller.rs`, `cart_service.rs`, `cart_dto.rs` |
+| Repository implementations | `<feature>_<store>_repository.rs` | `product_mysql_repository.rs`, `product_mock_repository.rs` |
+| React component files | `PascalCase.jsx` | `Shop.jsx`, `Admin.jsx` |
+| Other frontend modules | lower-case `.js` or `.jsx` | `api.js`, `perks.js`, `ui.jsx` |
+| JS functions, variables | `camelCase` | `loadCart`, `catName` |
+| React components | `PascalCase` | `CartModal`, `ProductForm` |
+| JSON fields in the API | `camelCase` | `categoryId`, `createdAt` |
+| Tests | Rust: `*_tests.rs` or `tests/`; frontend: `*.test.js(x)` next to the file under test | `api.test.js` |
+
+### Backend structure rules
+
+- Keep the layers separate: controllers only read the request and call a service; business rules and validation live in services; SQL lives only in repositories (`sqlx::query`, never the `query!` macro because it needs a live database at build time).
+- Admin permission is checked in the service with `require_admin`, not in the route, so it can be tested without HTTP.
+- Return `Result<_, AppError>`. Do not use `unwrap()` or `expect()` outside tests; map errors to an `AppError` variant with the right HTTP status (400, 403, 404, 409...).
+- Error messages shown to the user are written in Vietnamese because the frontend displays them as they are.
+- Magic numbers (limits, maximum lengths) are named constants, for example in `models/limits.rs`.
+- Dependency versions in `Cargo.toml` are pinned with `=` so every member builds the same result; commit `Cargo.lock`.
+
+### Frontend structure rules
+
+- Every HTTP call goes through `src/api.js`; components never call `fetch` directly.
+- Shared UI (modal, field, icons, order box) lives in `ui.jsx`; page-level components live in `Shop.jsx` and `Admin.jsx`.
+- ESLint rules: `react-hooks/rules-of-hooks` and `no-var` are errors; `react-hooks/exhaustive-deps`, `eqeqeq`, `prefer-const` and `no-unused-vars` (unused names may start with `_`) are warnings.
+- Do not leave `console.log` in committed code.
+
+### Comments and documentation
+
+- Rust: `//!` at the top of every module to say what it does, `///` on every public function, struct and constant. Comments explain why, not what.
+- Frontend: a short `//` comment above any non-obvious rule, such as the backend contract in `api.js`.
+
+### Tests
+
+- Every new business rule gets a service test in `Backend/src/services/service_tests.rs` or an API test in `Backend/tests/`.
+- Every new screen or API function gets a Vitest test next to its source file.
+- Tests must pass with `./run-tests.sh` before a change is merged.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and fill in the values.

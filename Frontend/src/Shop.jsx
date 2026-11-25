@@ -298,49 +298,38 @@ function OrdersModal({ onClose }) {
 }
 
 function ProductModal({ p, catName, items, onAdd, onClose }) {
+  const [adding, setAdding] = useState(false);
   const out = p.stock <= 0;
+
+  const handleAdd = async () => {
+    if (adding || out) return;
+    setAdding(true);
+    try {
+      await onAdd(p.id, onClose);
+    } finally {
+      setAdding(false);
+    }
+  };
+
   return (
     <Modal title={p.name} wide cls="pdetail" onClose={onClose}>
       <div className="pd-top">
-        {p.imageUrl ? (
-          <img className="ph pd-img" src={p.imageUrl} alt={p.name} />
-        ) : (
-          <div className="ph pd-img">Chưa có ảnh</div>
-        )}
+        {p.imageUrl ? <img className="ph pd-img" src={p.imageUrl} alt={p.name} /> : <div className="ph pd-img">Chưa có ảnh</div>}
         <div className="pd-info">
           <span className="tag">{catName}</span>
           <div className="price">{vnd(p.price)}</div>
           <span className={'pd-stock' + (out ? ' out' : '')}>{out ? 'Hết hàng' : `Còn ${p.stock} sản phẩm`}</span>
           <p className="pd-specs">{p.specs}</p>
-          <button className="btn main block" disabled={out} onClick={() => onAdd(p.id)}>
-            {out ? 'Hết hàng' : 'Thêm vào giỏ'}
+          <button className="btn main block" disabled={out || adding} onClick={handleAdd}>
+            {out ? 'Hết hàng' : adding ? 'Đang thêm...' : 'Thêm vào giỏ'}
           </button>
         </div>
       </div>
       <h3 className="pd-h">Chính sách và ưu đãi</h3>
-      {items.length === 0 ? (
-        <p className="tag">Chưa có chính sách nào cho sản phẩm này.</p>
-      ) : (
-        <ul className="perks">
-          {items.map(x => (
-            <li key={x.id}>
-              <span className="perk-ic">
-                <Icon name={x.icon} size={20} />
-              </span>
-              <div>
-                <b>{x.title}</b>
-                <span className="tag">{x.content}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+      {items.length === 0 ? <p className="tag">Chưa có chính sách nào.</p> : (
+        <ul className="perks">{items.map(x => <li key={x.id}><span className="perk-ic"><Icon name={x.icon} size={20} /></span><div><b>{x.title}</b><span className="tag">{x.content}</span></div></li>)}</ul>
       )}
-      <p className="tag">Chính sách và số liệu mang tính minh họa của bản demo.</p>
-      <div className="row">
-        <button className="btn" onClick={onClose}>
-          Đóng
-        </button>
-      </div>
+      <div className="row"><button className="btn" onClick={onClose}>Đóng</button></div>
     </Modal>
   );
 }
@@ -409,13 +398,14 @@ export default function Shop({ user, setUser }) {
     toast('Đăng nhập để tiếp tục');
     return true;
   };
-  const add = id => {
-    if (!needLogin())
-      run(async () => {
-        await api.addToCart(id);
-        await loadCart();
-        toast('Đã thêm vào giỏ hàng');
-      });
+  const add = (id, onSuccess) => {
+    if (needLogin()) return;
+    return run(async () => {
+      await api.addToCart(id);
+      await loadCart();
+      toast('Đã thêm vào giỏ hàng');
+      onSuccess?.();
+    });
   };
   const openDetail = p => {
     setDetail(p);

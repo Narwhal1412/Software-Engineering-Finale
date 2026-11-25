@@ -14,4 +14,8 @@
 Dockerfile @Narwhal1412
 .env.example @Narwhal1412
 /README.md @Narwhal1412
+<<<<<<< HEAD
 /compose.* @Narwhal1412
+=======
+/compose.* @Narwhal1412
+>>>>>>> 89e9b4ccbbf4f094ab3cfb0f17016a053d602771

@@ -1,0 +1,7 @@
+# This is a test that deploy traefik/whoami
+# It should not containt any ports
+services:
+ whoami:
+  image: traefik/whoami
+  container_name: traefik_test
+  

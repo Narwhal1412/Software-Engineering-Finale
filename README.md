@@ -36,7 +36,7 @@ flowchart LR
         end
     end
     subgraph T3["Data tier"]
-        D[("PostgreSQL")]
+        D[("MariaDB")]
     end
     F -->|HTTP / JSON| C
     R -->|SQL| D
@@ -58,7 +58,7 @@ flowchart LR
 |------|----------|------------|---------|
 | Presentation | Presentation | ... | [Frontend/README.md](Frontend/README.md) |
 | Application | Business Logic, Data Access | ... | [Backend/README.md](Backend/README.md) |
-| Data | none (data store) | PostgreSQL | defined in `compose.yaml` |
+| Data | none (data store) | MariaDB | defined in `compose.yaml` |
 
 ## Repository Structure
 
@@ -66,6 +66,8 @@ flowchart LR
 .
 ├── Backend/          	  # API service
 ├── Frontend/         	  # Web UI
+├── Database/             # Database sqls
+├── .woodpecker 	  # CI/CD Pipeline instructions yaml files
 ├── docs/             	  # Plans, notes, design decisions
 ├── .env.example      	  # Template for required environment variables
 ├── compose.yaml      	  # Defines how the services run together
